@@ -1,17 +1,33 @@
 {
   "expo": {
-    "name": "adotrip_app",
-    "slug": "adotrip_app",
+    "name": "AdoTrip - Flights, Hotels & Holidays",
+    "slug": "adotrip-app",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "adotrip",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0E2A47"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.adotrip.app"
     },
     "android": {
+      "package": "com.adotrip.app",
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0E2A47"
       }
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    },
+    "extra": {
+      "tagline": "Nothing Is Far"
     }
   }
 }
