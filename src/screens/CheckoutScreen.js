@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Field, PrimaryBtn, Chip } from '../components/UI';
+import { Field, PrimaryBtn, Chip, ScreenHeader } from '../components/UI';
 import { COLORS } from '../theme';
 
 export default function CheckoutScreen({ navigation, route }) {
@@ -16,11 +15,7 @@ export default function CheckoutScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <Text style={s.headT}>💳 Checkout — {type}</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ScreenHeader title={`💳 Checkout — ${type}`} onBack={() => navigation.goBack()} />
       <ScrollView style={{ padding: 16 }}>
         <View style={s.card}>
           <Text style={s.t}>{title}</Text>
@@ -50,8 +45,6 @@ export default function CheckoutScreen({ navigation, route }) {
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 16 },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 12 },
   t: { fontWeight: '900', color: COLORS.secondary, fontSize: 15 },
   m: { color: COLORS.textLight, fontSize: 12, marginBottom: 10 },

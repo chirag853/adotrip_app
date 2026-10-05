@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../theme';
+import { ScreenHeader } from '../components/UI';
 import { BUSES } from '../data/appData';
 
 export default function BusListScreen({ navigation, route }) {
@@ -10,13 +10,7 @@ export default function BusListScreen({ navigation, route }) {
   const [seat, setSeat] = useState(null);
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={s.headT}>{from} → {to}</Text>
-          <Text style={s.headS}>{date} • {BUSES.length} buses found</Text>
-        </View>
-      </View>
+      <ScreenHeader title={`${from} → ${to}`} subtitle={`${date} • ${BUSES.length} buses found`} onBack={() => navigation.goBack()} />
       <ScrollView style={{ padding: 16 }}>
         {BUSES.map((b) => (
           <View key={b.id} style={s.card}>
@@ -49,9 +43,6 @@ export default function BusListScreen({ navigation, route }) {
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 16 },
-  headS: { color: '#B9C4D6', fontSize: 11 },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 12, ...SHADOW },
   op: { fontWeight: '800', color: COLORS.secondary, fontSize: 14 },
   rt: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },

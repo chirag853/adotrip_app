@@ -1,25 +1,18 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../theme';
-import { Rating } from '../components/UI';
+import { Rating, HotelImg, ScreenHeader } from '../components/UI';
 import { HOTELS } from '../data/appData';
 
 export default function HotelListScreen({ navigation, route }) {
   const city = route.params?.city || 'Goa';
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={s.headT}>Hotels in {city}</Text>
-          <Text style={s.headS}>12 - 14 Oct • 2 Guests • {HOTELS.length * 37} properties</Text>
-        </View>
-      </View>
+      <ScreenHeader title={`Hotels in ${city}`} subtitle={`12 - 14 Oct • 2 Guests • ${HOTELS.length * 37} properties`} onBack={() => navigation.goBack()} />
       <ScrollView style={{ padding: 16 }}>
         {HOTELS.map((h) => (
           <TouchableOpacity key={h.id} style={s.card} onPress={() => navigation.navigate('HotelDetail', { item: h })}>
-            <View style={[s.img, { backgroundColor: h.color }]}><Text style={{ fontSize: 44 }}>{h.emoji}</Text></View>
+            <HotelImg hotel={h} height={130} emojiSize={44} />
             <View style={{ padding: 12 }}>
               <Text style={s.tag}>{h.tag}</Text>
               <Text style={s.name}>{h.name}</Text>
@@ -38,9 +31,6 @@ export default function HotelListScreen({ navigation, route }) {
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 16 },
-  headS: { color: '#B9C4D6', fontSize: 11 },
   card: { backgroundColor: '#fff', borderRadius: 14, marginBottom: 12, overflow: 'hidden', ...SHADOW },
   img: { height: 130, alignItems: 'center', justifyContent: 'center' },
   tag: { color: COLORS.primaryText, fontWeight: '800', fontSize: 11 },

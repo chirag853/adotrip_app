@@ -1,6 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, RADIUS, SHADOW } from '../theme';
+import { COLORS, RADIUS, SHADOW, SHADOW_LG, TYPO } from '../theme';
 
 export function SectionHeader({ title, subtitle, onViewAll }) {
   return (
@@ -58,6 +58,21 @@ export function PrimaryBtn({ title, onPress, icon }) {
   );
 }
 
+export function CoverImg({ hotel, height = 120, emojiSize = 48 }) {
+  const item = hotel || {};
+  if (item.image) {
+    return <Image source={{ uri: item.image }} style={{ width: '100%', height }} resizeMode="cover" />;
+  }
+  return (
+    <View style={{ height, alignItems: 'center', justifyContent: 'center', backgroundColor: item.color }}>
+      <Text style={{ fontSize: emojiSize }}>{item.emoji}</Text>
+    </View>
+  );
+}
+
+// Purana naam - compatibility ke liye alias
+export const HotelImg = CoverImg;
+
 export function Rating({ value, reviews }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -69,31 +84,60 @@ export function Rating({ value, reviews }) {
   );
 }
 
+// Shared navy header - sab screens me ek jaisa top bar
+export function ScreenHeader({ title, subtitle, onBack, right }) {
+  return (
+    <View style={s.head}>
+      {onBack ? (
+        <TouchableOpacity onPress={onBack} hitSlop={10} style={s.headBack}>
+          <Ionicons name="arrow-back" size={22} color={COLORS.textOnDark} />
+        </TouchableOpacity>
+      ) : (
+        <View style={{ width: 34 }} />
+      )}
+      <View style={{ flex: 1, marginHorizontal: 10 }}>
+        <Text style={s.headT} numberOfLines={1}>{title}</Text>
+        {subtitle ? <Text style={s.headS} numberOfLines={1}>{subtitle}</Text> : null}
+      </View>
+      {right ?? <View style={{ width: 22 }} />}
+    </View>
+  );
+}
+
+// Floating tab bar ke neeche dabne se bachne ke liye list ke end me gap
+export function TabGap() {
+  return <View style={{ height: 96 }} />;
+}
+
 const s = StyleSheet.create({
   secRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 20, marginBottom: 10 },
-  secTitle: { fontSize: 18, fontWeight: '800', color: COLORS.secondary },
-  secSub: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  secTitle: { fontSize: TYPO.xl + 1, fontWeight: '900', color: COLORS.secondary, letterSpacing: -0.3 },
+  secSub: { fontSize: TYPO.sm, color: COLORS.textLight, marginTop: 3 },
   viewAll: { color: COLORS.primaryText, fontWeight: '700', fontSize: 13 },
   chip: {
     flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#fff',
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.card,
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: RADIUS.pill, marginRight: 8, ...SHADOW,
   },
-  chipText: { fontSize: 13, fontWeight: '600', color: COLORS.text },
+  chipText: { fontSize: 13, fontWeight: '700', color: COLORS.text },
   fieldWrap: { marginBottom: 12 },
   label: { fontSize: 12, fontWeight: '700', color: COLORS.secondary, marginBottom: 6 },
   field: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md,
-    paddingHorizontal: 12, height: 48, ...SHADOW,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card,
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.button,
+    paddingHorizontal: 14, height: 52, ...SHADOW,
   },
-  input: { flex: 1, fontSize: 14, color: COLORS.text },
+  input: { flex: 1, fontSize: TYPO.md, color: COLORS.text },
   btn: {
-    backgroundColor: COLORS.primary, borderRadius: RADIUS.md,
-    height: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    marginTop: 6, borderWidth: 1, borderColor: COLORS.primaryDark,
+    backgroundColor: COLORS.primary, borderRadius: RADIUS.button,
+    height: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    marginTop: 6, borderWidth: 1, borderColor: COLORS.primaryDark, ...SHADOW_LG,
   },
-  btnText: { color: COLORS.onPrimary, fontSize: 16, fontWeight: '800' },
+  btnText: { color: COLORS.onPrimary, fontSize: TYPO.lg, fontWeight: '800', letterSpacing: 0.3 },
   star: { backgroundColor: COLORS.success, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   rev: { fontSize: 11, color: COLORS.textLight, marginLeft: 6 },
+  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', padding: 16 },
+  headBack: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' },
+  headT: { color: COLORS.textOnDark, fontWeight: '900', fontSize: 17 },
+  headS: { color: COLORS.mutedOnDark, fontSize: 11, marginTop: 1 },
 });

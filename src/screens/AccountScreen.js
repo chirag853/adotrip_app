@@ -2,6 +2,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme';
+import { TabGap } from '../components/UI';
 
 const ITEMS = [
   { t: 'My Bookings', i: 'briefcase-outline', r: 'Bookings' },
@@ -34,7 +35,7 @@ export default function AccountScreen({ navigation }) {
           <Text style={s.appT}>📱 Adotrip App v1.0.0</Text>
           <Text style={s.appS}>Flights • Hotels • Bus • Holidays • Visa{'\n'}Made inspired by adotrip.com</Text>
         </View>
-        <View style={{ height: 20 }} />
+        <TabGap />
       </ScrollView>
     </SafeAreaView>
   );

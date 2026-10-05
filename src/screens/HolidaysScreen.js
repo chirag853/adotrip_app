@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../theme';
-import { SectionHeader, Chip, Rating } from '../components/UI';
+import { SectionHeader, Chip, Rating, CoverImg, ScreenHeader, TabGap } from '../components/UI';
 import { PACKAGES } from '../data/appData';
 
 const FILTERS = ['All', 'Domestic', 'International', 'Honeymoon', 'Beach', 'Hill Station', 'Family'];
@@ -14,11 +14,7 @@ export default function HolidaysScreen({ navigation }) {
   const show = list.length ? list : PACKAGES;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => { try { navigation.goBack(); } catch {} }}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <Text style={s.headT}>🏖️ Holiday Packages</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Circuit')}><Ionicons name="sparkles-outline" size={22} color="#FEE400" /></TouchableOpacity>
-      </View>
+      <ScreenHeader title="🏖️ Holiday Packages" onBack={() => { try { navigation.goBack(); } catch {} }} right={<TouchableOpacity onPress={() => navigation.navigate('Circuit')}><Ionicons name="sparkles-outline" size={22} color="#FEE400" /></TouchableOpacity>} />
       <ScrollView>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ padding: 16 }}>
           {FILTERS.map((x) => <Chip key={x} label={x} active={f === x} onPress={() => setF(x)} />)}
@@ -26,8 +22,8 @@ export default function HolidaysScreen({ navigation }) {
         <SectionHeader title="Budget Tour Packages" subtitle={`${show.length} packages • EMI available`} />
         {show.map((p) => (
           <TouchableOpacity key={p.id} style={s.card} onPress={() => navigation.navigate('HolidayDetail', { item: p })}>
-            <View style={[s.img, { backgroundColor: p.color }]}>
-              <Text style={{ fontSize: 52 }}>{p.emoji}</Text>
+            <View style={s.img}>
+              <CoverImg hotel={p} height={150} emojiSize={52} />
               <View style={s.tag}><Text style={s.tagT}>{p.days} • {p.tag}</Text></View>
             </View>
             <View style={{ padding: 12 }}>
@@ -41,14 +37,12 @@ export default function HolidaysScreen({ navigation }) {
             </View>
           </TouchableOpacity>
         ))}
-        <View style={{ height: 20 }} />
+        <TabGap />
       </ScrollView>
     </SafeAreaView>
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 17 },
   card: { backgroundColor: '#fff', borderRadius: 14, marginHorizontal: 16, marginBottom: 12, overflow: 'hidden', ...SHADOW },
   img: { height: 150, alignItems: 'center', justifyContent: 'center' },
   tag: { position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },

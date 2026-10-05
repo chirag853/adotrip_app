@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Field, PrimaryBtn } from '../components/UI';
+import { Field, PrimaryBtn, ScreenHeader } from '../components/UI';
 import { COLORS } from '../theme';
 
 export default function BusScreen({ navigation }) {
@@ -11,11 +10,7 @@ export default function BusScreen({ navigation }) {
   const [date, setDate] = useState('12 Oct 2026');
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <Text style={s.headT}>🚌 Bus Booking</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ScreenHeader title="🚌 Bus Booking" onBack={() => navigation.goBack()} />
       <ScrollView style={{ padding: 16 }}>
         <View style={s.card}>
           <Field label="From" value={from} onChangeText={setFrom} icon="location-outline" />
@@ -29,8 +24,6 @@ export default function BusScreen({ navigation }) {
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 17 },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: 14 },
   note: { backgroundColor: '#F5F3FF', borderRadius: 12, padding: 14, marginTop: 12, borderWidth: 1, borderColor: '#C4B5FD' },
   noteT: { color: '#5B21B6', fontWeight: '600', fontSize: 13 },

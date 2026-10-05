@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Field, PrimaryBtn } from '../components/UI';
+import { Field, PrimaryBtn, ScreenHeader } from '../components/UI';
 import { COLORS } from '../theme';
 
 export default function HotelsScreen({ navigation }) {
@@ -11,11 +10,7 @@ export default function HotelsScreen({ navigation }) {
   const [checkout, setCheckout] = useState('14 Oct 2026');
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <Text style={s.headT}>🏨 Hotel Booking</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ScreenHeader title="🏨 Hotel Booking" onBack={() => navigation.goBack()} />
       <ScrollView style={{ padding: 16 }}>
         <View style={s.card}>
           <Field label="Destination City" value={city} onChangeText={setCity} placeholder="Goa" icon="location-outline" />
@@ -32,8 +27,6 @@ export default function HotelsScreen({ navigation }) {
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 17 },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: 14 },
   note: { backgroundColor: '#FFFDE7', borderRadius: 12, padding: 14, marginTop: 12, borderWidth: 1, borderColor: '#FDE047' },
   noteT: { color: '#713F12', fontWeight: '600', fontSize: 13 },

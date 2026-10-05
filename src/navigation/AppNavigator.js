@@ -2,7 +2,9 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../theme';
+import { View } from 'react-native';
+import { COLORS, RADIUS } from '../theme';
+import SosButton from '../components/SosButton';
 
 import HomeScreen from '../screens/HomeScreen';
 import HolidaysScreen from '../screens/HolidaysScreen';
@@ -31,24 +33,30 @@ const Tab = createBottomTabNavigator();
 
 function Tabs() {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: COLORS.primaryText,
-        tabBarInactiveTintColor: '#8A94A6',
-        tabBarStyle: { height: 62, paddingBottom: 8, paddingTop: 6 },
-        tabBarIcon: ({ color, size }) => {
-          const map = { Home: 'home', Holidays: 'map', Offers: 'pricetags', Bookings: 'briefcase', Account: 'person' };
-          return <Ionicons name={map[route.name] || 'ellipse'} size={22} color={color} />;
-        },
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Holidays" component={HolidaysScreen} />
-      <Tab.Screen name="Offers" component={OffersScreen} />
-      <Tab.Screen name="Bookings" component={BookingsScreen} />
-      <Tab.Screen name="Account" component={AccountScreen} />
-    </Tab.Navigator>
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarHideOnKeyboard: true,
+          tabBarActiveTintColor: COLORS.secondary,
+          tabBarInactiveTintColor: 'rgba(90,100,115,0.85)',
+          tabBarItemStyle: { borderRadius: RADIUS.button, marginHorizontal: 4, paddingVertical: 4 },
+          tabBarStyle: { position: 'absolute', bottom: 12, left: 16, right: 16, height: 68, borderRadius: RADIUS.xl, backgroundColor: '#fff', borderTopWidth: 1, borderColor: COLORS.border, paddingBottom: 8, paddingTop: 8, elevation: 8, shadowColor: COLORS.secondary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 10 },
+          tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+          tabBarIcon: ({ color, size }) => {
+            const map = { Home: 'home', Holidays: 'map', Offers: 'pricetags', Bookings: 'briefcase', Account: 'person' };
+            return <Ionicons name={map[route.name] || 'ellipse'} size={22} color={color} />;
+          },
+        })}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Holidays" component={HolidaysScreen} />
+        <Tab.Screen name="Offers" component={OffersScreen} />
+        <Tab.Screen name="Bookings" component={BookingsScreen} />
+        <Tab.Screen name="Account" component={AccountScreen} />
+      </Tab.Navigator>
+      <SosButton />
+    </View>
   );
 }
 

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme';
@@ -16,8 +16,12 @@ export default function HolidayDetailScreen({ navigation, route }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
       <View style={[s.hero, { backgroundColor: p.color }]}>
+        {p.image ? (
+          <Image source={{ uri: p.image }} style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]} resizeMode="cover" />
+        ) : (
+          <Text style={{ fontSize: 76 }}>{p.emoji}</Text>
+        )}
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.back}><Ionicons name="arrow-back" size={20} color="#fff" /></TouchableOpacity>
-        <Text style={{ fontSize: 76 }}>{p.emoji}</Text>
       </View>
       <ScrollView style={{ padding: 16 }}>
         <Text style={s.tag}>{p.days} • {p.tag}</Text>

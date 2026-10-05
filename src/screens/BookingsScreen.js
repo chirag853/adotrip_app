@@ -2,6 +2,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../theme';
+import { ScreenHeader, TabGap } from '../components/UI';
 
 const DEMO = [
   { id: 'ADO882341', type: '✈️ Flight', title: 'Delhi → Mumbai • IndiGo', date: '12 Oct 2026', status: 'Confirmed', color: '#16A34A' },
@@ -12,10 +13,7 @@ const DEMO = [
 export default function BookingsScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <Text style={s.headT}>🧳 My Bookings</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Support')}><Ionicons name="help-circle-outline" size={22} color="#fff" /></TouchableOpacity>
-      </View>
+      <ScreenHeader title="🧳 My Bookings" right={<TouchableOpacity onPress={() => navigation.navigate('Support')}><Ionicons name="help-circle-outline" size={22} color="#fff" /></TouchableOpacity>} />
       <ScrollView style={{ padding: 16 }}>
         {DEMO.map((b) => (
           <View key={b.id} style={s.card}>
@@ -34,14 +32,12 @@ export default function BookingsScreen({ navigation }) {
         <TouchableOpacity style={s.new} onPress={() => navigation.navigate('Main', { screen: 'Home' })}>
           <Text style={s.newT}>+ Book New Trip ✈️</Text>
         </TouchableOpacity>
-        <View style={{ height: 20 }} />
+        <TabGap />
       </ScrollView>
     </SafeAreaView>
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 17 },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 12, ...SHADOW },
   type: { fontWeight: '800', color: COLORS.secondary },
   st: { fontWeight: '800', fontSize: 12 },

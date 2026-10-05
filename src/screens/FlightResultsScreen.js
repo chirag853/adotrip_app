@@ -2,20 +2,14 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../theme';
+import { ScreenHeader } from '../components/UI';
 import { FLIGHT_RESULTS } from '../data/appData';
 
 export default function FlightResultsScreen({ navigation, route }) {
   const { from = 'Delhi', to = 'Mumbai', date = '12 Oct 2026' } = route.params || {};
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={s.headT}>{from} → {to}</Text>
-          <Text style={s.headS}>{date} • 2 Travellers • Economy</Text>
-        </View>
-        <Ionicons name="filter-outline" size={22} color="#fff" />
-      </View>
+      <ScreenHeader title={`${from} → ${to}`} subtitle={`${date} • 2 Travellers • Economy`} onBack={() => navigation.goBack()} right={<Ionicons name="filter-outline" size={22} color="#fff" />} />
       <ScrollView style={{ padding: 16 }}>
         {FLIGHT_RESULTS.map((f) => (
           <View key={f.id} style={s.card}>
@@ -46,9 +40,6 @@ export default function FlightResultsScreen({ navigation, route }) {
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 16 },
-  headS: { color: '#B9C4D6', fontSize: 11 },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 12, ...SHADOW },
   tag: { alignSelf: 'flex-start', backgroundColor: '#E8FDF0', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
   tagT: { color: COLORS.success, fontSize: 10, fontWeight: '800' },

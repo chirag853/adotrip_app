@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme';
@@ -8,8 +8,12 @@ export default function BlogDetailScreen({ navigation, route }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top']}>
       <View style={[s.hero, { backgroundColor: b.color }]}>
+        {b.image ? (
+          <Image source={{ uri: b.image }} style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]} resizeMode="cover" />
+        ) : (
+          <Text style={{ fontSize: 72 }}>{b.emoji}</Text>
+        )}
         <TouchableOpacity onPress={() => navigation.goBack()} style={s.back}><Ionicons name="arrow-back" size={20} color="#fff" /></TouchableOpacity>
-        <Text style={{ fontSize: 72 }}>{b.emoji}</Text>
       </View>
       <ScrollView style={{ padding: 18 }}>
         <Text style={s.cat}>{b.cat} • {b.read} • 5747 views</Text>

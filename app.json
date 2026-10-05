@@ -4,14 +4,25 @@
     "slug": "adotrip-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.webp",
     "userInterfaceStyle": "light",
     "scheme": "adotrip",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#0E2A47"
+      "image": "./assets/logo.webp",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
     },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/logo.webp",
+          "imageWidth": 200
+        }
+      ],
+      "expo-font"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.adotrip.app"
@@ -19,12 +30,12 @@
     "android": {
       "package": "com.adotrip.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0E2A47"
+        "foregroundImage": "./assets/logo.webp",
+        "backgroundColor": "#FFFFFF"
       }
     },
     "web": {
-      "favicon": "./assets/icon.png"
+      "favicon": "./assets/logo.webp"
     },
     "extra": {
       "tagline": "Nothing Is Far"

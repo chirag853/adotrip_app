@@ -1,17 +1,13 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import AdoLogo from '../components/AdoLogo';
+import { ScreenHeader } from '../components/UI';
 import { COLORS } from '../theme';
 
 function Page({ navigation, title, emoji, children }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <Text style={s.headT}>{emoji} {title}</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ScreenHeader title={`${emoji} ${title}`} onBack={() => navigation.goBack()} />
       <ScrollView style={{ padding: 16 }}>{children}<View style={{ height: 20 }} /></ScrollView>
     </SafeAreaView>
   );
@@ -73,8 +69,6 @@ export function SupportScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 16 },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: 16 },
   h: { fontWeight: '900', color: COLORS.secondary, fontSize: 15, marginTop: 14 },
   p: { color: '#4B5563', fontSize: 13, lineHeight: 20, marginTop: 6 },

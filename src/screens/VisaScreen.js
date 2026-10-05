@@ -1,17 +1,13 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../theme';
+import { ScreenHeader } from '../components/UI';
 import { VISA_COUNTRIES } from '../data/appData';
 
 export default function VisaScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <Text style={s.headT}>🛂 Visa Services</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ScreenHeader title="🛂 Visa Services" onBack={() => navigation.goBack()} />
       <ScrollView style={{ padding: 16 }}>
         <View style={s.banner}>
           <Text style={s.bannerT}>Apply for Visa Online — Hassle Free ✈️</Text>
@@ -36,8 +32,6 @@ export default function VisaScreen({ navigation }) {
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 17 },
   banner: { backgroundColor: COLORS.secondary, borderRadius: 14, padding: 16, marginBottom: 12 },
   bannerT: { color: '#fff', fontWeight: '900', fontSize: 15 },
   bannerS: { color: '#B9C4D6', fontSize: 12, marginTop: 4 },

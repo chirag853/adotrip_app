@@ -9,14 +9,14 @@ export const OFFERS = [
 ];
 
 export const PACKAGES = [
-  { id: 'p1', title: '4N/5D Kerala Tour Package', location: 'Kochi • Munnar • Alleppey', price: 24999, oldPrice: 32999, rating: 4.6, reviews: 1240, days: '4N/5D', tag: 'Bestseller', emoji: '🌴', color: '#0B6E4F', desc: 'Houseboat stay, tea gardens, Kathakali show, transfers & daily breakfast included.' },
-  { id: 'p2', title: '7N Kerala Honeymoon Package', location: 'Kovalam • Poovar • Kanyakumari', price: 41999, oldPrice: 52999, rating: 4.8, reviews: 860, days: '6N/7D', tag: 'Honeymoon', emoji: '💑', color: '#DB2777', desc: 'Private cab, beach resort, candle-light dinner, flower bed decoration & sightseeing.' },
-  { id: 'p3', title: 'Thailand Honeymoon 6N', location: 'Bangkok • Pattaya • Coral Island', price: 54999, oldPrice: 69999, rating: 4.7, reviews: 2100, days: '5N/6D', tag: 'International', emoji: '🏝️', color: '#0284C7', desc: 'Flights, 4-star stay, Coral island tour with lunch, Safari World & city tour.' },
-  { id: 'p4', title: 'Bali Nusa Penida 7N', location: 'Kuta • Ubud • Nusa Penida', price: 62999, oldPrice: 79999, rating: 4.8, reviews: 1530, days: '6N/7D', tag: 'Trending', emoji: '🌊', color: '#7C3AED', desc: 'Visa assistance, private pool villa 1N, Kelingking beach, swings & transfers.' },
-  { id: 'p5', title: '4N Andaman Tour', location: 'Port Blair • Havelock • Neil', price: 28999, oldPrice: 35999, rating: 4.5, reviews: 970, days: '3N/4D', tag: 'Beach', emoji: '🐠', color: '#0EA5E9', desc: 'Cruise transfers, Radhanagar beach, Cellular Jail light & sound show.' },
-  { id: 'p6', title: 'Kashmir Paradise 5N', location: 'Srinagar • Gulmarg • Pahalgam', price: 27999, oldPrice: 34999, rating: 4.6, reviews: 1870, days: '4N/5D', tag: 'Hill Station', emoji: '🏔️', color: '#334155', desc: 'Houseboat 1N, Gulmarg Gondola Phase 1, Dal Lake shikara ride & cab.' },
-  { id: 'p7', title: 'Gujarat Heritage 5N', location: 'Ahmedabad • Gir • Somnath • Dwarka', price: 22999, oldPrice: 28999, rating: 4.4, reviews: 640, days: '4N/5D', tag: 'Family', emoji: '🦁', color: '#B45309', desc: 'Statue of Unity, Gir safari, Somnath aarti, Dwarkadhish darshan.' },
-  { id: 'p8', title: 'Dubai Explorer 4N', location: 'Dubai • Abu Dhabi', price: 59999, oldPrice: 74999, rating: 4.7, reviews: 1980, days: '3N/4D', tag: 'International', emoji: '🌆', color: '#0E2A47', desc: 'Burj Khalifa, Desert safari, Marina cruise dinner, city tour & visa.' },
+  { id: 'p1', title: '4N/5D Kerala Tour Package', location: 'Kochi • Munnar • Alleppey', price: 24999, oldPrice: 32999, rating: 4.6, reviews: 1240, days: '4N/5D', tag: 'Bestseller', emoji: '🌴', color: '#0B6E4F', image: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80', desc: 'Houseboat stay, tea gardens, Kathakali show, transfers & daily breakfast included.' },
+  { id: 'p2', title: '7N Kerala Honeymoon Package', location: 'Kovalam • Poovar • Kanyakumari', price: 41999, oldPrice: 52999, rating: 4.8, reviews: 860, days: '6N/7D', tag: 'Honeymoon', emoji: '💑', color: '#DB2777', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80', desc: 'Private cab, beach resort, candle-light dinner, flower bed decoration & sightseeing.' },
+  { id: 'p3', title: 'Thailand Honeymoon 6N', location: 'Bangkok • Pattaya • Coral Island', price: 54999, oldPrice: 69999, rating: 4.7, reviews: 2100, days: '5N/6D', tag: 'International', emoji: '🏝️', color: '#0284C7', image: 'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=800&q=80', desc: 'Flights, 4-star stay, Coral island tour with lunch, Safari World & city tour.' },
+  { id: 'p4', title: 'Bali Nusa Penida 7N', location: 'Kuta • Ubud • Nusa Penida', price: 62999, oldPrice: 79999, rating: 4.8, reviews: 1530, days: '6N/7D', tag: 'Trending', emoji: '🌊', color: '#7C3AED', image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80', desc: 'Visa assistance, private pool villa 1N, Kelingking beach, swings & transfers.' },
+  { id: 'p5', title: '4N Andaman Tour', location: 'Port Blair • Havelock • Neil', price: 28999, oldPrice: 35999, rating: 4.5, reviews: 970, days: '3N/4D', tag: 'Beach', emoji: '🐠', color: '#0EA5E9', image: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=800&q=80', desc: 'Cruise transfers, Radhanagar beach, Cellular Jail light & sound show.' },
+  { id: 'p6', title: 'Kashmir Paradise 5N', location: 'Srinagar • Gulmarg • Pahalgam', price: 27999, oldPrice: 34999, rating: 4.6, reviews: 1870, days: '4N/5D', tag: 'Hill Station', emoji: '🏔️', color: '#334155', image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80', desc: 'Houseboat 1N, Gulmarg Gondola Phase 1, Dal Lake shikara ride & cab.' },
+  { id: 'p7', title: 'Gujarat Heritage 5N', location: 'Ahmedabad • Gir • Somnath • Dwarka', price: 22999, oldPrice: 28999, rating: 4.4, reviews: 640, days: '4N/5D', tag: 'Family', emoji: '🦁', color: '#B45309', image: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=800&q=80', desc: 'Statue of Unity, Gir safari, Somnath aarti, Dwarkadhish darshan.' },
+  { id: 'p8', title: 'Dubai Explorer 4N', location: 'Dubai • Abu Dhabi', price: 59999, oldPrice: 74999, rating: 4.7, reviews: 1980, days: '3N/4D', tag: 'International', emoji: '🌆', color: '#0E2A47', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80', desc: 'Burj Khalifa, Desert safari, Marina cruise dinner, city tour & visa.' },
 ];
 
 export const FLIGHT_ROUTES = [
@@ -37,20 +37,20 @@ export const FLIGHT_RESULTS = [
 ];
 
 export const HOTELS = [
-  { id: 'h1', name: 'Hotel Savera, Goa', location: 'Baga Beach, Goa', price: 3499, oldPrice: 5999, rating: 4.3, reviews: 2100, tag: 'Couple Friendly', emoji: '🏨', color: '#0284C7' },
-  { id: 'h2', name: 'Geetanjali International', location: 'Deoghar, Jharkhand', price: 1899, oldPrice: 2999, rating: 3.9, reviews: 840, tag: 'Budget', emoji: '🛎️', color: '#B45309' },
-  { id: 'h3', name: 'The Leela Palace, Udaipur', location: 'Lake Pichola, Udaipur', price: 18999, oldPrice: 24999, rating: 4.9, reviews: 3200, tag: 'Luxury 5★', emoji: '👑', color: '#7C3AED' },
-  { id: 'h4', name: 'Taj Exotica, Andaman', location: 'Havelock Island', price: 12999, oldPrice: 16999, rating: 4.7, reviews: 1500, tag: 'Beach Resort', emoji: '🌅', color: '#0B6E4F' },
-  { id: 'h5', name: 'ITC Grand, Mumbai', location: 'Lower Parel, Mumbai', price: 8999, oldPrice: 11999, rating: 4.5, reviews: 2700, tag: 'Business', emoji: '🏢', color: '#0E2A47' },
+  { id: 'h1', name: 'Hotel Savera, Goa', location: 'Baga Beach, Goa', price: 3499, oldPrice: 5999, rating: 4.3, reviews: 2100, tag: 'Couple Friendly', emoji: '🏨', color: '#0284C7', image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80' },
+  { id: 'h2', name: 'Geetanjali International', location: 'Deoghar, Jharkhand', price: 1899, oldPrice: 2999, rating: 3.9, reviews: 840, tag: 'Budget', emoji: '🛎️', color: '#B45309', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80' },
+  { id: 'h3', name: 'The Leela Palace, Udaipur', location: 'Lake Pichola, Udaipur', price: 18999, oldPrice: 24999, rating: 4.9, reviews: 3200, tag: 'Luxury 5★', emoji: '👑', color: '#7C3AED', image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80' },
+  { id: 'h4', name: 'Taj Exotica, Andaman', location: 'Havelock Island', price: 12999, oldPrice: 16999, rating: 4.7, reviews: 1500, tag: 'Beach Resort', emoji: '🌅', color: '#0B6E4F', image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80' },
+  { id: 'h5', name: 'ITC Grand, Mumbai', location: 'Lower Parel, Mumbai', price: 8999, oldPrice: 11999, rating: 4.5, reviews: 2700, tag: 'Business', emoji: '🏢', color: '#0E2A47', image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80' },
 ];
 
 export const DESTINATIONS = [
-  { id: 'd1', name: 'Goa', tag: 'Beaches', tours: 120, emoji: '🏖️', color: '#0EA5E9' },
-  { id: 'd2', name: 'Jaipur', tag: 'Heritage', tours: 95, emoji: '🕌', color: '#B89B00' },
-  { id: 'd3', name: 'Manali', tag: 'Hills', tours: 80, emoji: '⛰️', color: '#334155' },
-  { id: 'd4', name: 'Kerala', tag: 'Backwaters', tours: 110, emoji: '🌴', color: '#0B6E4F' },
-  { id: 'd5', name: 'Dubai', tag: 'International', tours: 65, emoji: '🌆', color: '#7C3AED' },
-  { id: 'd6', name: 'Bali', tag: 'International', tours: 58, emoji: '🌊', color: '#0284C7' },
+  { id: 'd1', name: 'Goa', tag: 'Beaches', tours: 120, emoji: '🏖️', color: '#0EA5E9', image: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=80' },
+  { id: 'd2', name: 'Jaipur', tag: 'Heritage', tours: 95, emoji: '🕌', color: '#B89B00', image: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80' },
+  { id: 'd3', name: 'Manali', tag: 'Hills', tours: 80, emoji: '⛰️', color: '#334155', image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80' },
+  { id: 'd4', name: 'Kerala', tag: 'Backwaters', tours: 110, emoji: '🌴', color: '#0B6E4F', image: 'https://images.unsplash.com/photo-1593693411515-c20261bcad6e?auto=format&fit=crop&w=800&q=80' },
+  { id: 'd5', name: 'Dubai', tag: 'International', tours: 65, emoji: '🌆', color: '#7C3AED', image: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=800&q=80' },
+  { id: 'd6', name: 'Bali', tag: 'International', tours: 58, emoji: '🌊', color: '#0284C7', image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80' },
 ];
 
 export const BUSES = [
@@ -70,10 +70,10 @@ export const VISA_COUNTRIES = [
 ];
 
 export const BLOGS = [
-  { id: 'g1', title: 'Long Weekends In India 2026 - Complete List', cat: 'Travel Guide', read: '6 min read', emoji: '📅', color: '#B89B00', desc: 'Plan smart with all long weekends, festivals and best places to visit month-wise.' },
-  { id: 'g2', title: 'Must Visit Travel Destinations Around the World', cat: 'Destinations', read: '8 min read', emoji: '🌍', color: '#0284C7', desc: 'From Bali to Santorini — iconic landscapes, cultures and sights made easy.' },
-  { id: 'g3', title: 'How Travel Agencies Transform Your Trip', cat: 'Tips', read: '5 min read', emoji: '💡', color: '#0B6E4F', desc: 'Tailored packages, best deals and 24x7 support — why 2M+ travellers trust Adotrip.' },
-  { id: 'g4', title: 'Chardham Yatra 2026: Dates, Route & Budget', cat: 'Pilgrimage', read: '10 min read', emoji: '🛕', color: '#B45309', desc: 'Yamunotri, Gangotri, Kedarnath, Badrinath — complete itinerary with stay & transport.' },
+  { id: 'g1', title: 'Long Weekends In India 2026 - Complete List', cat: 'Travel Guide', read: '6 min read', emoji: '📅', color: '#B89B00', image: 'https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=800&q=80', desc: 'Plan smart with all long weekends, festivals and best places to visit month-wise.' },
+  { id: 'g2', title: 'Must Visit Travel Destinations Around the World', cat: 'Destinations', read: '8 min read', emoji: '🌍', color: '#0284C7', image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80', desc: 'From Bali to Santorini — iconic landscapes, cultures and sights made easy.' },
+  { id: 'g3', title: 'How Travel Agencies Transform Your Trip', cat: 'Tips', read: '5 min read', emoji: '💡', color: '#0B6E4F', image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80', desc: 'Tailored packages, best deals and 24x7 support — why 2M+ travellers trust Adotrip.' },
+  { id: 'g4', title: 'Chardham Yatra 2026: Dates, Route & Budget', cat: 'Pilgrimage', read: '10 min read', emoji: '🛕', color: '#B45309', image: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=800&q=80', desc: 'Yamunotri, Gangotri, Kedarnath, Badrinath — complete itinerary with stay & transport.' },
 ];
 
 export const FAQS = [

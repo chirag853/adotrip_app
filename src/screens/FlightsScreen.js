@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Field, Chip, PrimaryBtn } from '../components/UI';
+import { Field, Chip, PrimaryBtn, ScreenHeader } from '../components/UI';
 import { COLORS } from '../theme';
 import { CITIES } from '../data/appData';
 
@@ -14,11 +14,7 @@ export default function FlightsScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <Text style={s.headT}>✈️ Flight Booking</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ScreenHeader title="✈️ Flight Booking" onBack={() => navigation.goBack()} />
       <ScrollView style={{ padding: 16 }}>
         <View style={{ flexDirection: 'row', marginBottom: 12 }}>
           {['One Way', 'Round Trip'].map((t) => (
@@ -48,8 +44,6 @@ export default function FlightsScreen({ navigation, route }) {
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 17 },
   card: { backgroundColor: '#fff', borderRadius: 14, padding: 14 },
   lbl: { fontSize: 12, fontWeight: '700', color: COLORS.secondary, marginBottom: 8, marginTop: 4 },
   city: { backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },

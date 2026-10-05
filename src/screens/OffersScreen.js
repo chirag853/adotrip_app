@@ -1,20 +1,15 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme';
-import { Chip } from '../components/UI';
+import { Chip, ScreenHeader, TabGap } from '../components/UI';
 import { OFFERS } from '../data/appData';
 
 export default function OffersScreen({ navigation }) {
   const [f, setF] = useState('All Offers');
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.head}>
-        <TouchableOpacity onPress={() => { try { navigation.goBack(); } catch {} }}><Ionicons name="arrow-back" size={22} color="#fff" /></TouchableOpacity>
-        <Text style={s.headT}>🎁 Exclusive Offers</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <ScreenHeader title="🎁 Exclusive Offers" onBack={() => { try { navigation.goBack(); } catch {} }} />
       <ScrollView>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ padding: 16 }}>
           {['All Offers', 'Flights', 'Hotels', 'Holiday'].map((x) => <Chip key={x} label={x} active={f === x} onPress={() => setF(x)} />)}
@@ -36,14 +31,12 @@ export default function OffersScreen({ navigation }) {
             <Text style={s.valid}>Valid till 31 Dec 2026 • T&C apply</Text>
           </View>
         ))}
-        <View style={{ height: 20 }} />
+        <TabGap />
       </ScrollView>
     </SafeAreaView>
   );
 }
 const s = StyleSheet.create({
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  headT: { color: '#fff', fontWeight: '900', fontSize: 17 },
   card: { borderRadius: 16, marginHorizontal: 16, marginBottom: 12, padding: 16 },
   t: { color: '#fff', fontWeight: '900', fontSize: 18 },
   sub: { color: '#fff', opacity: 0.85, fontSize: 13 },

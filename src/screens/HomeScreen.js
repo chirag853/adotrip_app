@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AdoLogo from '../components/AdoLogo';
-import { SectionHeader, Chip, Rating } from '../components/UI';
+import { SectionHeader, Chip, Rating, HotelImg, CoverImg, TabGap } from '../components/UI';
 import { COLORS, RADIUS, SHADOW } from '../theme';
 import { OFFERS, PACKAGES, FLIGHT_ROUTES, HOTELS, DESTINATIONS, BLOGS, FAQS } from '../data/appData';
 
@@ -15,6 +15,30 @@ const TABS = [
   { id: 'Holidays', icon: '🏖️', route: 'Holidays' },
   { id: 'Visa', icon: '🛂', route: 'Visa' },
 ];
+
+// MakeMyTrip style bada photo card - photo fail ho to emoji fallback
+function DestCard({ d, onPress }) {
+  const [err, setErr] = useState(false);
+  return (
+    <TouchableOpacity style={[s.destCard, { backgroundColor: d.color }]} onPress={onPress} activeOpacity={0.9}>
+      {d.image && !err ? (
+        <View style={s.destImg}>
+          <Image source={{ uri: d.image }} style={StyleSheet.absoluteFill} resizeMode="cover" onError={() => setErr(true)} />
+          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.78)']} style={s.destGrad} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }}>
+            <Text style={s.destN}>{d.name}</Text>
+            <Text style={s.destT}>{d.tag} • {d.tours} tours</Text>
+          </LinearGradient>
+        </View>
+      ) : (
+        <View style={[s.destImg, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={{ fontSize: 44 }}>{d.emoji}</Text>
+          <Text style={s.destN}>{d.name}</Text>
+          <Text style={s.destT}>{d.tag} • {d.tours} tours</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
 
 export default function HomeScreen({ navigation }) {
   const [tab, setTab] = useState('Flights');
@@ -117,8 +141,8 @@ export default function HomeScreen({ navigation }) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
           {PACKAGES.slice(0, 6).map((p) => (
             <TouchableOpacity key={p.id} style={s.pkg} onPress={() => navigation.navigate('HolidayDetail', { item: p })}>
-              <View style={[s.pkgImg, { backgroundColor: p.color }]}>
-                <Text style={{ fontSize: 48 }}>{p.emoji}</Text>
+              <View style={s.pkgImg}>
+                <CoverImg hotel={p} height={120} />
                 <View style={s.tag}><Text style={s.tagT}>{p.tag}</Text></View>
               </View>
               <View style={{ padding: 10 }}>
@@ -153,8 +177,8 @@ export default function HomeScreen({ navigation }) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
           {HOTELS.map((h) => (
             <TouchableOpacity key={h.id} style={s.pkg} onPress={() => navigation.navigate('HotelDetail', { item: h })}>
-              <View style={[s.pkgImg, { backgroundColor: h.color }]}>
-                <Text style={{ fontSize: 48 }}>{h.emoji}</Text>
+              <View style={s.pkgImg}>
+                <HotelImg hotel={h} height={120} />
                 <View style={s.tag}><Text style={s.tagT}>{h.tag}</Text></View>
               </View>
               <View style={{ padding: 10 }}>
@@ -167,17 +191,13 @@ export default function HomeScreen({ navigation }) {
           ))}
         </ScrollView>
 
-        {/* Destinations */}
+        {/* Destinations - MakeMyTrip style bade photo cards */}
         <SectionHeader title="Famous Tourist Destinations" subtitle="India + International top picks" />
-        <View style={s.grid}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
           {DESTINATIONS.map((d) => (
-            <TouchableOpacity key={d.id} style={[s.dest, { backgroundColor: d.color }]} onPress={() => navigation.navigate('Holidays')}>
-              <Text style={{ fontSize: 34 }}>{d.emoji}</Text>
-              <Text style={s.destN}>{d.name}</Text>
-              <Text style={s.destT}>{d.tag} • {d.tours} tours</Text>
-            </TouchableOpacity>
+            <DestCard key={d.id} d={d} onPress={() => navigation.navigate('Holidays')} />
           ))}
-        </View>
+        </ScrollView>
 
         {/* Planner banner */}
         <TouchableOpacity onPress={() => navigation.navigate('Circuit')}>
@@ -191,7 +211,11 @@ export default function HomeScreen({ navigation }) {
         <SectionHeader title="Travel Blogs" subtitle="Guides, tips & inspiration" onViewAll={() => navigation.navigate('Blog')} />
         {BLOGS.slice(0, 3).map((b) => (
           <TouchableOpacity key={b.id} style={s.blog} onPress={() => navigation.navigate('BlogDetail', { item: b })}>
-            <View style={[s.blogIc, { backgroundColor: b.color }]}><Text style={{ fontSize: 26 }}>{b.emoji}</Text></View>
+            {b.image ? (
+              <Image source={{ uri: b.image }} style={s.blogIc} />
+            ) : (
+              <View style={[s.blogIc, { backgroundColor: b.color }]}><Text style={{ fontSize: 26 }}>{b.emoji}</Text></View>
+            )}
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={s.blogT} numberOfLines={2}>{b.title}</Text>
               <Text style={s.blogS}>{b.cat} • {b.read}</Text>
@@ -220,7 +244,7 @@ export default function HomeScreen({ navigation }) {
           </View>
           <Text style={s.copy}>Made with ❤️ inspired by adotrip.com • v1.0.0</Text>
         </View>
-        <View style={{ height: 20 }} />
+        <TabGap />
       </ScrollView>
     </SafeAreaView>
   );
@@ -264,10 +288,11 @@ const s = StyleSheet.create({
   routeS: { fontSize: 12, color: COLORS.textLight },
   routeP: { fontWeight: '900', color: COLORS.secondary, fontSize: 15 },
   book: { color: COLORS.primaryText, fontWeight: '800', fontSize: 12 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 10 },
-  dest: { width: '31%', borderRadius: 12, padding: 12, alignItems: 'center' },
-  destN: { color: '#fff', fontWeight: '800', marginTop: 6 },
-  destT: { color: '#fff', fontSize: 10, opacity: 0.9, textAlign: 'center' },
+  destCard: { width: 168, height: 210, borderRadius: 16, marginRight: 12, overflow: 'hidden', ...SHADOW },
+  destImg: { flex: 1, borderRadius: 16, overflow: 'hidden' },
+  destGrad: { flex: 1, justifyContent: 'flex-end', padding: 12 },
+  destN: { color: '#fff', fontWeight: '900', fontSize: 16, textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  destT: { color: 'rgba(255,255,255,0.85)', fontSize: 11, marginTop: 2, textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   banner: { margin: 16, borderRadius: 14, padding: 16 },
   bannerT: { color: '#fff', fontWeight: '900', fontSize: 15 },
   bannerS: { color: '#E9D5FF', fontSize: 12, marginTop: 4 },
