@@ -27,7 +27,7 @@ export default function HotelDetailScreen({ navigation, route }) {
           ))}
         </View>
         <Text style={s.sec}>About this property</Text>
-        <Text style={s.desc}>Premium rooms, 24x7 room service, multi-cuisine restaurant aur family-friendly stay. Adotrip price guarantee ke sath best deal — free cancellation 48 hrs pehle tak.</Text>
+        <Text style={s.desc}>Premium rooms, 24x7 room service, a multi-cuisine restaurant and a family-friendly stay. Best deal with the Adotrip price guarantee — free cancellation up to 48 hrs before check-in.</Text>
         <View style={s.priceBox}>
           <View>
             <Text style={s.price}>₹{h.price.toLocaleString('en-IN')}<Text style={s.per}> /night</Text></Text>

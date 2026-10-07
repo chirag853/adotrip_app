@@ -19,7 +19,7 @@ export default function AccountScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
       <View style={s.hero}>
         <View style={s.av}><Text style={{ fontSize: 34 }}>🧳</Text></View>
-        <Text style={s.name}>Namaste, Traveller 🙏</Text>
+        <Text style={s.name}>Hello, Traveller 👋</Text>
         <Text style={s.sub}>traveller@adotrip.app • Join deals & track trips</Text>
         <TouchableOpacity style={s.login} onPress={() => navigation.navigate('Auth')}><Text style={s.loginT}>Login / Signup</Text></TouchableOpacity>
       </View>

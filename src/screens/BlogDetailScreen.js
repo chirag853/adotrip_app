@@ -19,9 +19,9 @@ export default function BlogDetailScreen({ navigation, route }) {
         <Text style={s.cat}>{b.cat} • {b.read} • 5747 views</Text>
         <Text style={s.title}>{b.title}</Text>
         <Text style={s.body}>{b.desc}</Text>
-        <Text style={s.body}>Adotrip ke travel experts ke according, best time to travel, budget tips, hotel picks aur local experiences — sab kuch plan karke chalein. Flights + Hotels + Packages ek sath book karne par extra 10% OFF milta hai app par.</Text>
+        <Text style={s.body}>According to Adotrip travel experts: the best time to travel, budget tips, hotel picks and local experiences — plan it all before you go. Book Flights + Hotels + Packages together and get an extra 10% OFF in the app.</Text>
         <Text style={s.h}>Top 3 Tips</Text>
-        <Text style={s.body}>1. Long weekend par 2-3 mahine pehle booking karein — fares 40% tak kam milte hain.{'\n'}2. Circuit Planner se day-wise itinerary banayein.{'\n'}3. Newsletter subscribe karke exclusive deals payein.</Text>
+        <Text style={s.body}>1. Book 2-3 months before a long weekend — fares drop by up to 40%.{'\n'}2. Build a day-wise itinerary with the Circuit Planner.{'\n'}3. Subscribe to the newsletter for exclusive deals.</Text>
         <Text style={s.h}>Popular Packages</Text>
         <TouchableOpacity style={s.cta} onPress={() => navigation.navigate('Holidays')}>
           <Text style={s.ctaT}>View Holiday Packages →</Text>

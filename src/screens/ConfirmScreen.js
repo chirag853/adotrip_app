@@ -11,7 +11,7 @@ export default function ConfirmScreen({ navigation, route }) {
       <View style={s.card}>
         <Text style={{ fontSize: 64, textAlign: 'center' }}>✅</Text>
         <Text style={s.t}>Booking Confirmed!</Text>
-        <Text style={s.s}>{type} booking successful — details email & SMS par bhej diye hain.</Text>
+        <Text style={s.s}>{type} booking successful — details have been sent via email & SMS.</Text>
         <View style={s.box}>
           <Text style={s.bk}>Booking ID: {id}</Text>
           <Text style={s.tt}>{title}</Text>

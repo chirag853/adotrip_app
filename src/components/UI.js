@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS, SHADOW, SHADOW_LG, TYPO } from '../theme';
@@ -60,8 +61,9 @@ export function PrimaryBtn({ title, onPress, icon }) {
 
 export function CoverImg({ hotel, height = 120, emojiSize = 48 }) {
   const item = hotel || {};
-  if (item.image) {
-    return <Image source={{ uri: item.image }} style={{ width: '100%', height }} resizeMode="cover" />;
+  const [err, setErr] = useState(false);
+  if (item.image && !err) {
+    return <Image source={{ uri: item.image }} style={{ width: '100%', height }} resizeMode="cover" onError={() => setErr(true)} />;
   }
   return (
     <View style={{ height, alignItems: 'center', justifyContent: 'center', backgroundColor: item.color }}>
@@ -70,7 +72,7 @@ export function CoverImg({ hotel, height = 120, emojiSize = 48 }) {
   );
 }
 
-// Purana naam - compatibility ke liye alias
+// Old name - alias for compatibility
 export const HotelImg = CoverImg;
 
 export function Rating({ value, reviews }) {
@@ -104,7 +106,7 @@ export function ScreenHeader({ title, subtitle, onBack, right }) {
   );
 }
 
-// Floating tab bar ke neeche dabne se bachne ke liye list ke end me gap
+// Gap at the end of lists so content is not hidden under the floating tab bar
 export function TabGap() {
   return <View style={{ height: 96 }} />;
 }

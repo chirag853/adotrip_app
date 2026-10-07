@@ -20,7 +20,7 @@ export default function HotelsScreen({ navigation }) {
           <PrimaryBtn title="Search Hotels" icon="search" onPress={() => navigation.navigate('HotelList', { city })} />
         </View>
         <View style={s.note}>
-          <Text style={s.noteT}>💡 Tip: HOTEL20 code se Flat 20% OFF — sirf app par!</Text>
+          <Text style={s.noteT}>💡 Tip: Flat 20% OFF with code HOTEL20 — app only!</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

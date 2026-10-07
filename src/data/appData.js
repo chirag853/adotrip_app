@@ -77,9 +77,9 @@ export const BLOGS = [
 ];
 
 export const FAQS = [
-  { q: 'Flight aur hotel offers kahan milenge?', a: 'Home page par Exclusive Offers section me. Har offer ke sath promo code diya hai — booking ke time apply karein.' },
-  { q: 'Kya booking ke baad cancellation / refund milega?', a: 'Haan. Har flight, hotel aur package par cancellation policy likhi hoti hai. Refund 5-7 working days me source account me aa jata hai.' },
-  { q: 'Kya Adotrip par EMI available hai?', a: 'Haan, major credit cards par No-Cost EMI available hai Checkout page par.' },
-  { q: 'Circuit Planner kya hai?', a: 'AI Trip Planner me origin, destination aur days daalein — app turant day-wise itinerary bana deta hai.' },
-  { q: 'Customer support kaise contact karein?', a: 'Contact Us page par form bharein ya 24x7 helpline par call karein. App me Support section bhi hai.' },
+  { q: 'Where can I find flight and hotel offers?', a: 'Check the Exclusive Offers section on the Home page. Every offer includes a promo code — apply it at booking time.' },
+  { q: 'Will I get a cancellation/refund after booking?', a: 'Yes. Every flight, hotel and package lists its cancellation policy. Refunds reach your source account in 5-7 working days.' },
+  { q: 'Is EMI available on Adotrip?', a: 'Yes, No-Cost EMI on major credit cards is available on the Checkout page.' },
+  { q: 'What is the Circuit Planner?', a: 'Enter origin, destination and days in the AI Trip Planner — the app instantly builds a day-wise itinerary.' },
+  { q: 'How do I contact customer support?', a: 'Fill the form on the Contact Us page or call the 24x7 helpline. The app also has a Support section.' },
 ];

@@ -124,7 +124,7 @@ export default function HomeScreen({ navigation }) {
         </LinearGradient>
 
         {/* Offers */}
-        <SectionHeader title="Exclusive Offers" subtitle="Flights • Hotels • Holidays par dhamaka deals" onViewAll={() => navigation.navigate('Offers')} />
+        <SectionHeader title="Exclusive Offers" subtitle="Top deals on Flights • Hotels • Holidays" onViewAll={() => navigation.navigate('Offers')} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
           {OFFERS.map((o) => (
             <TouchableOpacity key={o.id} onPress={() => navigation.navigate('Offers')} style={[s.offer, { backgroundColor: o.color }]}>
@@ -157,7 +157,7 @@ export default function HomeScreen({ navigation }) {
         </ScrollView>
 
         {/* Flight routes */}
-        <SectionHeader title="Top Flight Routes" subtitle="Sabse saste fares, daily updated" onViewAll={() => navigation.navigate('Flights')} />
+        <SectionHeader title="Top Flight Routes" subtitle="Cheapest fares, updated daily" onViewAll={() => navigation.navigate('Flights')} />
         {FLIGHT_ROUTES.slice(0, 4).map((f) => (
           <TouchableOpacity key={f.id} style={s.route} onPress={() => navigation.navigate('FlightResults', { from: f.fromCity, to: f.toCity })}>
             <Text style={{ fontSize: 28 }}>{f.emoji}</Text>
@@ -202,7 +202,7 @@ export default function HomeScreen({ navigation }) {
         {/* Planner banner */}
         <TouchableOpacity onPress={() => navigation.navigate('Circuit')}>
           <LinearGradient colors={['#7C3AED', '#0E2A47']} style={s.banner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-            <Text style={s.bannerT}>✨ Circuit Planner — AI se banao perfect itinerary</Text>
+            <Text style={s.bannerT}>✨ Circuit Planner — Build the perfect itinerary with AI</Text>
             <Text style={s.bannerS}>Origin + Destination + Days = Ready Day-wise Plan. Try Now →</Text>
           </LinearGradient>
         </TouchableOpacity>

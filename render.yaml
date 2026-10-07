@@ -1,0 +1,16 @@
+# Render one-click deploy — proxy ko cloud par permanent chalao,
+# taaki `npm run proxy` + same Wi-Fi ki zaroorat khatm ho jaye.
+# Steps: https://dashboard.render.com -> New -> Blueprint -> ye repo select.
+# Deploy ke baad mile URL ko .env me dalo:
+#   EXPO_PUBLIC_PACKAGES_PROXY_URL=https://<service>.onrender.com
+# Phir: npx expo start -c
+services:
+  - type: web
+    name: adotrip-packages-proxy
+    region: mumbai
+    runtime: node
+    repo: .
+    buildCommand: echo "no build needed"
+    startCommand: node proxy/render-proxy.js
+    healthCheckPath: /?ping=1
+    autoDeploy: true

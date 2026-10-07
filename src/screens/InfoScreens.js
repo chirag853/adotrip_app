@@ -19,7 +19,7 @@ export function AboutScreen({ navigation }) {
       <View style={s.card}>
         <AdoLogo showTagline />
         <Text style={s.h}>India's Leading Online Travel Platform Since 2018</Text>
-        <Text style={s.p}>Adotrip ek smart, integrated travel tech platform hai — flights, hotels, buses, holidays, visa, currency exchange, travel insurance aur web check-in sab ek jagah.</Text>
+        <Text style={s.p}>Adotrip is a smart, integrated travel tech platform — flights, hotels, buses, holidays, visa, currency exchange, travel insurance and web check-in, all in one place.</Text>
         <Text style={s.h}>Our Services</Text>
         <Text style={s.p}>✈️ Flights — 100+ airlines, best fares{'\n'}🏨 Hotels — 50,000+ properties{'\n'}🚌 Buses — Volvo, Sleeper, Seater{'\n'}🏖️ Holidays — Domestic + International{'\n'}🛂 Visa — 99% approval rate{'\n'}✨ AI Circuit Planner — Free itinerary tool</Text>
         <Text style={s.h}>Why 2M+ Travellers Trust Us</Text>
@@ -37,7 +37,7 @@ export function ContactScreen({ navigation }) {
         <Text style={s.p}>📞 Helpline: 1800-123-4567 (Toll Free){'\n'}📧 Email: support@adotrip.app{'\n'}💬 WhatsApp: +91 98765 43210{'\n'}📍 Address: Connaught Place, New Delhi 110001</Text>
         <Text style={s.h}>Business Queries</Text>
         <Text style={s.p}>🤝 B2B: partners@adotrip.app{'\n'}📢 Ads & Hiring: careers@adotrip.app</Text>
-        <View style={s.cta}><Text style={s.ctaT}>Chat par “May I Help You” — hum turant reply karte hain 🙋</Text></View>
+        <View style={s.cta}><Text style={s.ctaT}>Say “May I Help You” on chat — we reply instantly 🙋</Text></View>
       </View>
     </Page>
   );
@@ -45,11 +45,11 @@ export function ContactScreen({ navigation }) {
 
 export function SupportScreen({ navigation }) {
   const faqs = [
-    ['Flight/hotel offers kahan milenge?', 'Home → Exclusive Offers me. Code checkout par apply karein.'],
-    ['Refund kitne din me aata hai?', '5-7 working days me source account me.'],
-    ['EMI available hai?', 'Haan, major credit cards par No-Cost EMI.'],
-    ['Web Check-In kaise karein?', 'Flights page → Web Check-In banner → PNR daalein.'],
-    ['Circuit Planner kya hai?', 'AI tool jo day-wise itinerary banata hai — Circuit tab me try karein.'],
+    ['Where can I find flight/hotel offers?', 'Go to Home → Exclusive Offers. Apply the code at checkout.'],
+    ['How many days does a refund take?', '5-7 working days to your source account.'],
+    ['Is EMI available?', 'Yes, No-Cost EMI on major credit cards.'],
+    ['How do I do Web Check-In?', 'Go to the Flights page → Web Check-In banner → enter your PNR.'],
+    ['What is the Circuit Planner?', 'An AI tool that builds a day-wise itinerary — try it in the Circuit tab.'],
   ];
   return (
     <Page navigation={navigation} title="Help & Support" emoji="🎧">
@@ -62,7 +62,7 @@ export function SupportScreen({ navigation }) {
           </View>
         ))}
         <Text style={s.h}>Policies</Text>
-        <Text style={s.p}>• Terms of Use: Fair usage, transparent fares.{'\n'}• Privacy: Data encrypted, kabhi sell nahi hota.{'\n'}• Cancellation: Har booking par policy checkout se pehle dikhti hai.</Text>
+        <Text style={s.p}>• Terms of Use: Fair usage, transparent fares.{'\n'}• Privacy: Data is encrypted and never sold.{'\n'}• Cancellation: Every booking shows its policy before checkout.</Text>
       </View>
     </Page>
   );

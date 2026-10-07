@@ -15,7 +15,7 @@ function dial(num) {
   Linking.openURL(`tel:${num}`).catch(() => Alert.alert('Call failed', `Please dial ${num} manually.`));
 }
 
-// Floating SOS button + emergency numbers sheet - Tabs ke andar render hota hai
+// Floating SOS button + emergency numbers sheet - rendered inside Tabs
 export default function SosButton() {
   const [open, setOpen] = useState(false);
   return (
