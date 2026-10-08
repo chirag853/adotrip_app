@@ -17,7 +17,7 @@ export default function HotelsScreen({ navigation }) {
           <Field label="Check-In Date" value={checkin} onChangeText={setCheckin} icon="calendar-outline" />
           <Field label="Check-Out Date" value={checkout} onChangeText={setCheckout} icon="calendar-outline" />
           <Field label="Guests & Rooms" value="2 Guests • 1 Room" placeholder="Guests" icon="people-outline" />
-          <PrimaryBtn title="Search Hotels" icon="search" onPress={() => navigation.navigate('HotelList', { city })} />
+          <PrimaryBtn title="Search Hotels" icon="search" onPress={() => navigation.navigate('HotelList', { city, checkin, checkout, rooms: 1, adults: 2, children: 0 })} />
         </View>
         <View style={s.note}>
           <Text style={s.noteT}>💡 Tip: Flat 20% OFF with code HOTEL20 — app only!</Text>

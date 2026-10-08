@@ -187,7 +187,7 @@ export default function HolidaysScreen({ navigation }) {
                       : "Couldn't load live packages."}
               </Text>
               <Text style={s.errS}>
-                Popular packages dikh rahe hain • `npm run proxy:restart` • Tap Retry
+                Showing popular packages • Run `npm run proxy:restart` • Tap Retry
                 {(() => {
                   const m = String(apiError.cause || '').match(/proxy\s+(https?:\/\/[^/\s:]+(?::\d+)?)/i);
                   return m ? ` • Trying: ${m[1]}` : '';

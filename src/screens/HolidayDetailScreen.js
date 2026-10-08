@@ -8,10 +8,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SHADOW } from '../theme';
+import { COLORS, SHADOW, SHADOW_LG } from '../theme';
 import { Rating, PrimaryBtn } from '../components/UI';
 import { fetchPackageDetail } from '../utils/packagesApi';
 
@@ -104,6 +105,23 @@ function Gallery({ images, title }) {
   );
 }
 
+function Stepper({ label, value, onMinus, onPlus }) {
+  return (
+    <View style={s.stepRow}>
+      <Text style={s.stepLbl}>{label}</Text>
+      <View style={s.stepCtl}>
+        <TouchableOpacity style={s.stepBtn} onPress={onMinus} activeOpacity={0.7}>
+          <Text style={s.stepBtnT}>−</Text>
+        </TouchableOpacity>
+        <Text style={s.stepVal}>{value}</Text>
+        <TouchableOpacity style={s.stepBtn} onPress={onPlus} activeOpacity={0.7}>
+          <Text style={s.stepBtnT}>+</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 function Section({ id, title, children, onLayout, open = true, onToggle, collapsible = true }) {
   const body = (
     <View
@@ -141,6 +159,10 @@ export default function HolidayDetailScreen({ navigation, route }) {
   const [error, setError] = useState(null);
   const [openDay, setOpenDay] = useState(1);
   const [activeTab, setActiveTab] = useState('overview');
+  // Travellers popup (website jaisa): rooms + passengers + total
+  const [showBook, setShowBook] = useState(false);
+  const [roomDrop, setRoomDrop] = useState(false);
+  const [rooms, setRooms] = useState([{ adults: 2, children: 0 }]);
   // Overview + Itinerary khule rahenge, baaki (Highlights / Inclusions /
   // Terms) collapsed — tap par khulenge.
   const [openSecs, setOpenSecs] = useState({
@@ -154,6 +176,7 @@ export default function HolidayDetailScreen({ navigation, route }) {
   const scrollRef = useRef(null);
   const yMap = useRef({});
   const baseY = useRef(0);
+  const insets = useSafeAreaInsets();
 
   const load = useCallback(
     async (signal) => {
@@ -194,6 +217,25 @@ export default function HolidayDetailScreen({ navigation, route }) {
     setActiveTab(id);
   }, []);
 
+  const setRoomCount = (n) => {
+    setRooms((prev) => {
+      const next = prev.slice(0, n);
+      while (next.length < n) next.push({ adults: 0, children: 0 });
+      if (next.length && next[0].adults + next[0].children === 0)
+        next[0] = { adults: 2, children: 0 };
+      return next;
+    });
+    setRoomDrop(false);
+  };
+
+  const bump = (ri, key, delta, max) => {
+    setRooms((prev) =>
+      prev.map((r, i) =>
+        i === ri ? { ...r, [key]: Math.min(max, Math.max(0, r[key] + delta)) } : r
+      )
+    );
+  };
+
   const goTab = (id) => {
     setActiveTab(id);
     // Collapsed section par tap -> kholo taaki scroll ke baad content dikhe
@@ -232,6 +274,9 @@ export default function HolidayDetailScreen({ navigation, route }) {
     : null);
 
   const inr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
+  const perPerson = d?.price || 0;
+  const pax = rooms.reduce((a, r) => a + r.adults + r.children, 0);
+  const tourTotal = perPerson * pax;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
@@ -467,24 +512,114 @@ export default function HolidayDetailScreen({ navigation, route }) {
             </View>
           </ScrollView>
 
-          <View style={s.bookBar}>
-            <View>
+          <View style={[s.bookBar, { paddingBottom: Math.max(12, insets.bottom + 4) }]}>
+            <View style={s.bookPriceWrap}>
               <Text style={s.bookPrice}>{inr(d.price)}</Text>
               <Text style={s.bookSub}>per person • Pay 25% to book</Text>
             </View>
-            <PrimaryBtn
-              title="Book Now"
-              icon="checkmark-circle-outline"
-              onPress={() =>
-                navigation.navigate('Checkout', {
-                  type: 'Holiday',
-                  title: d.title,
-                  price: d.price,
-                  meta: `${d.durationText}${d.state ? ` • ${d.state}` : ''}`,
-                })
-              }
-            />
+            <View style={s.bookBtnWrap}>
+              <PrimaryBtn
+                title="Book Now"
+                icon="checkmark-circle-outline"
+                style={s.bookBtn}
+                onPress={() => setShowBook(true)}
+              />
+            </View>
           </View>
+
+          <Modal
+            visible={showBook}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowBook(false)}
+          >
+            <TouchableOpacity
+              style={s.overlay}
+              activeOpacity={1}
+              onPress={() => setShowBook(false)}
+            >
+              <TouchableOpacity activeOpacity={1} style={s.sheet} onPress={() => {}}>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <Text style={s.sheetT}>Travellers</Text>
+
+                  <TouchableOpacity
+                    style={s.dropBtn}
+                    onPress={() => setRoomDrop((v) => !v)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={s.dropT}>
+                      0{rooms.length} Room{rooms.length > 1 ? 's' : ''}
+                    </Text>
+                    <Text style={s.dropT}>{roomDrop ? '▲' : '▼'}</Text>
+                  </TouchableOpacity>
+                  {roomDrop && (
+                    <View style={s.dropList}>
+                      {[1, 2, 3].map((n) => (
+                        <TouchableOpacity
+                          key={n}
+                          style={s.dropOpt}
+                          onPress={() => setRoomCount(n)}
+                        >
+                          <Text style={s.dropOptT}>
+                            0{n} Room{n > 1 ? 's' : ''}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+
+                  {rooms.map((r, i) => (
+                    <View key={i} style={s.roomBox}>
+                      <Text style={s.roomT}>Room {i + 1}</Text>
+                      <Stepper label="Adult" value={r.adults} onMinus={() => bump(i, 'adults', -1, 4)} onPlus={() => bump(i, 'adults', 1, 4)} />
+                      <Stepper label="Child" value={r.children} onMinus={() => bump(i, 'children', -1, 3)} onPlus={() => bump(i, 'children', 1, 3)} />
+                    </View>
+                  ))}
+
+                  <View style={s.tbl}>
+                    <View style={s.tblRow}>
+                      <Text style={s.tblHead}>Tour Passengers :</Text>
+                      <View style={{ flex: 1 }}>
+                        {rooms.map((r, i) => (
+                          <Text key={i} style={s.tblVal}>
+                            Room {i + 1}: Adult - {r.adults}, Child - {r.children}
+                          </Text>
+                        ))}
+                      </View>
+                    </View>
+                    <View style={s.tblRow}>
+                      <Text style={s.tblHead}>Tour Cost (Per Person) :</Text>
+                      <Text style={s.tblVal}>{inr(perPerson).replace('₹', '')}</Text>
+                    </View>
+                    <View style={s.tblRow}>
+                      <Text style={s.tblHead}>Total Tour Cost :</Text>
+                      <Text style={[s.tblVal, s.tblTotal]}>{inr(tourTotal).replace('₹', '')}</Text>
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[s.bookBtn, s.sheetBtn, pax === 0 && s.sheetBtnOff]}
+                    disabled={pax === 0}
+                    onPress={() => {
+                      setShowBook(false);
+                      navigation.navigate('Checkout', {
+                        type: 'Holiday',
+                        title: d.title,
+                        price: tourTotal,
+                        meta: `${d.durationText}${d.state ? ` • ${d.state}` : ''} • ${pax} travellers • ${rooms.length} room${rooms.length > 1 ? 's' : ''}`,
+                      });
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={s.sheetBtnT}>Book this Package</Text>
+                  </TouchableOpacity>
+                  {pax === 0 && (
+                    <Text style={s.sheetHint}>Add at least 1 traveller to continue.</Text>
+                  )}
+                </ScrollView>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
         </>
       )}
     </SafeAreaView>
@@ -533,7 +668,35 @@ const s = StyleSheet.create({
   simImg: { width: '100%', height: 100 },
   simT: { fontWeight: '800', color: COLORS.secondary, fontSize: 12 },
   simP: { fontWeight: '900', color: COLORS.secondary, fontSize: 14, marginTop: 4 },
-  bookBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderColor: COLORS.border, paddingHorizontal: 16, paddingVertical: 10, paddingBottom: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  bookBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderColor: COLORS.border, paddingHorizontal: 16, paddingTop: 10, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  bookPriceWrap: { flexShrink: 0 },
+  bookBtnWrap: { flex: 1 },
+  bookBtn: { marginTop: 0, height: 50 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  sheet: { backgroundColor: '#fff', borderRadius: 16, padding: 18, maxHeight: '88%', ...SHADOW_LG },
+  sheetT: { fontSize: 19, fontWeight: '900', color: COLORS.secondary, marginBottom: 12 },
+  dropBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, borderRadius: 4, paddingHorizontal: 12, height: 48, backgroundColor: '#fff' },
+  dropT: { fontSize: 15, color: COLORS.text, fontWeight: '500' },
+  dropList: { borderWidth: 1, borderTopWidth: 0, borderColor: COLORS.border, borderBottomLeftRadius: 4, borderBottomRightRadius: 4, backgroundColor: '#fff' },
+  dropOpt: { paddingHorizontal: 12, paddingVertical: 12, borderTopWidth: 1, borderColor: COLORS.border },
+  dropOptT: { fontSize: 15, color: COLORS.text },
+  roomBox: { marginTop: 12, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, backgroundColor: '#FAFBFC' },
+  roomT: { fontWeight: '800', color: COLORS.secondary, fontSize: 14, marginBottom: 6 },
+  stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6 },
+  stepLbl: { fontSize: 14, color: COLORS.text },
+  stepCtl: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  stepBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  stepBtnT: { fontSize: 18, fontWeight: '800', color: COLORS.secondary, marginTop: -2 },
+  stepVal: { fontSize: 15, fontWeight: '800', color: COLORS.secondary, minWidth: 20, textAlign: 'center' },
+  tbl: { marginTop: 14, borderWidth: 1, borderColor: COLORS.border, borderRadius: 4, overflow: 'hidden' },
+  tblRow: { flexDirection: 'row', borderBottomWidth: 1, borderColor: COLORS.border },
+  tblHead: { flex: 1, fontSize: 14, color: COLORS.text, padding: 12 },
+  tblVal: { flex: 1, fontSize: 14, color: COLORS.text, padding: 12, borderLeftWidth: 1, borderColor: COLORS.border },
+  tblTotal: { fontWeight: '900', color: COLORS.secondary, fontSize: 16 },
+  sheetBtn: { backgroundColor: COLORS.primary, borderRadius: 8, height: 52, alignItems: 'center', justifyContent: 'center', marginTop: 14, borderWidth: 1, borderColor: COLORS.primaryDark },
+  sheetBtnT: { color: '#000', fontWeight: '900', fontSize: 16 },
+  sheetBtnOff: { opacity: 0.5 },
+  sheetHint: { fontSize: 12, color: COLORS.danger, textAlign: 'center', marginTop: 8 },
   bookPrice: { fontSize: 20, fontWeight: '900', color: COLORS.secondary },
   bookSub: { fontSize: 11, color: COLORS.textLight },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 24 },

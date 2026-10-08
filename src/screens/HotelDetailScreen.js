@@ -19,10 +19,11 @@ export default function HotelDetailScreen({ navigation, route }) {
       </View>
       <ScrollView style={{ padding: 16 }}>
         <Text style={s.name}>{h.name}</Text>
+        {!!h.stars && <Text style={s.stars}>{'★'.repeat(Number(h.stars))} Hotel</Text>}
         <Text style={s.loc}>📍 {h.location}</Text>
         <View style={{ marginVertical: 8 }}><Rating value={h.rating} reviews={h.reviews} /></View>
         <View style={s.fac}>
-          {['Free WiFi', 'Pool', 'Breakfast', 'Parking', 'Spa', 'Beach View'].map((f) => (
+          {(h.amenities && h.amenities.length ? h.amenities : ['Free WiFi', 'Pool', 'Breakfast', 'Parking', 'Spa', 'Beach View']).map((f) => (
             <View key={f} style={s.pill}><Text style={s.pillT}>✓ {f}</Text></View>
           ))}
         </View>
@@ -46,6 +47,7 @@ const s = StyleSheet.create({
   back: { position: 'absolute', top: 14, left: 14, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 8 },
   tag: { color: '#fff', backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginTop: 8, fontWeight: '700', fontSize: 12 },
   name: { fontSize: 20, fontWeight: '900', color: COLORS.secondary },
+  stars: { color: '#F59E0B', fontWeight: '800', fontSize: 13, marginTop: 2 },
   loc: { color: COLORS.textLight, marginTop: 4 },
   fac: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
   pill: { backgroundColor: '#fff', borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 6 },

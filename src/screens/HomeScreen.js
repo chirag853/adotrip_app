@@ -44,10 +44,17 @@ export default function HomeScreen({ navigation }) {
   const [tab, setTab] = useState('Flights');
   const [from, setFrom] = useState('Delhi');
   const [to, setTo] = useState('Mumbai');
+  const [hotelCity, setHotelCity] = useState('Goa');
+  const [hotelIn, setHotelIn] = useState('12 Oct 2026');
+  const [hotelOut, setHotelOut] = useState('14 Oct 2026');
 
   const goSearch = () => {
     const r = TABS.find((t) => t.id === tab)?.route || 'Flights';
     if (r === 'Holidays') { navigation.navigate('Holidays'); return; }
+    if (r === 'Hotels') {
+      navigation.navigate('HotelList', { city: hotelCity.trim(), checkin: hotelIn, checkout: hotelOut });
+      return;
+    }
     navigation.navigate(r, { from, to });
   };
 
@@ -81,6 +88,12 @@ export default function HomeScreen({ navigation }) {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+            {tab === 'Hotels' ? (
+              <View style={s.inpBox}>
+                <Text style={s.lbl}>🏨 Destination City</Text>
+                <TextInput value={hotelCity} onChangeText={setHotelCity} style={s.inp} placeholder="Goa, Delhi, Mumbai…" />
+              </View>
+            ) : (
             <View style={s.row2}>
               <View style={s.inpBox}>
                 <Text style={s.lbl}>From</Text>
@@ -94,7 +107,21 @@ export default function HomeScreen({ navigation }) {
                 <TextInput value={to} onChangeText={setTo} style={s.inp} placeholder="Mumbai" />
               </View>
             </View>
+            )}
             <View style={s.row2}>
+              {tab === 'Hotels' ? (
+                <>
+                  <View style={s.inpBox}>
+                    <Text style={s.lbl}>📅 Check-In</Text>
+                    <TextInput value={hotelIn} onChangeText={setHotelIn} style={s.inp} placeholder="12 Oct 2026" />
+                  </View>
+                  <View style={s.inpBox}>
+                    <Text style={s.lbl}>📅 Check-Out</Text>
+                    <TextInput value={hotelOut} onChangeText={setHotelOut} style={s.inp} placeholder="14 Oct 2026" />
+                  </View>
+                </>
+              ) : (
+                <>
               <View style={s.inpBox}>
                 <Text style={s.lbl}>📅 Departure</Text>
                 <Text style={s.inp}>12 Oct 2026</Text>
@@ -103,6 +130,8 @@ export default function HomeScreen({ navigation }) {
                 <Text style={s.lbl}>👥 Travellers</Text>
                 <Text style={s.inp}>2 Adults</Text>
               </View>
+                </>
+              )}
             </View>
             <TouchableOpacity style={s.searchBtn} onPress={goSearch}>
               <Ionicons name="search" size={18} color={COLORS.onPrimary} />

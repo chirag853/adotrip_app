@@ -50,9 +50,9 @@ export function Field({ label, value, placeholder, onChangeText, icon, keyboardT
   );
 }
 
-export function PrimaryBtn({ title, onPress, icon }) {
+export function PrimaryBtn({ title, onPress, icon, style }) {
   return (
-    <TouchableOpacity style={s.btn} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={[s.btn, style]} onPress={onPress} activeOpacity={0.85}>
       {icon ? <Ionicons name={icon} size={18} color={COLORS.onPrimary} style={{ marginRight: 6 }} /> : null}
       <Text style={s.btnText}>{title}</Text>
     </TouchableOpacity>
