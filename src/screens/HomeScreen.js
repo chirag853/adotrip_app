@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AdoLogo from '../components/AdoLogo';
-import TopMenu from '../components/TopMenu';
+import NavDrawer from '../components/NavDrawer';
 import { SectionHeader, Chip, Rating, HotelImg, CoverImg, TabGap } from '../components/UI';
 import { COLORS, RADIUS, SHADOW } from '../theme';
 import { OFFERS, PACKAGES, FLIGHT_ROUTES, HOTELS, DESTINATIONS, BLOGS, FAQS } from '../data/appData';
@@ -49,6 +49,7 @@ export default function HomeScreen({ navigation }) {
   const [hotelIn, setHotelIn] = useState('12 Oct 2026');
   const [hotelOut, setHotelOut] = useState('14 Oct 2026');
   const scrollRef = useRef(null);
+  const [navOpen, setNavOpen] = useState(false);
 
   const goSearch = () => {
     const r = TABS.find((t) => t.id === tab)?.route || 'Flights';
@@ -59,6 +60,24 @@ export default function HomeScreen({ navigation }) {
     }
     navigation.navigate(r, { from, to });
   };
+
+  // Saare menu items ek hi jagah — top bar ke nav icon (NavDrawer) isi
+  // list ko dikhata hai.
+  const MENU_ITEMS = [
+    {
+      id: 'home',
+      label: 'Home',
+      icon: 'home-outline',
+      active: true,
+      onPress: () => scrollRef.current?.scrollTo({ y: 0, animated: true }),
+    },
+    { id: 'flights', label: 'Flights', icon: 'airplane-outline', onPress: () => navigation.navigate('Flights') },
+    { id: 'hotels', label: 'Hotels', icon: 'bed-outline', onPress: () => navigation.navigate('Hotels') },
+    { id: 'holidays', label: 'Holidays', icon: 'map-outline', onPress: () => navigation.navigate('Holidays') },
+    { id: 'himachal', label: 'Himachal Tourism', icon: 'trail-sign-outline', isNew: true, onPress: () => navigation.navigate('Himachal') },
+    { id: 'luxury', label: 'Luxury Trains', icon: 'train-outline', isNew: true, onPress: () => navigation.navigate('LuxuryTrains') },
+    { id: 'circuit', label: 'Circuit Planner', icon: 'sparkles-outline', onPress: () => navigation.navigate('Circuit') },
+  ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
@@ -73,26 +92,15 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity style={s.iconBtn} onPress={() => navigation.navigate('Auth')}>
               <Ionicons name="person-outline" size={20} color={COLORS.secondary} />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={s.iconBtn}
+              onPress={() => setNavOpen(true)}
+              accessibilityLabel="Open navigation menu"
+            >
+              <Ionicons name="menu-outline" size={22} color={COLORS.secondary} />
+            </TouchableOpacity>
           </View>
         </View>
-
-        {/* Website jaisa menu — logo ke neeche (NEW ribbon Himachal + Luxury Trains par) */}
-        <TopMenu
-          items={[
-            {
-              id: 'home',
-              label: 'Home',
-              active: true,
-              onPress: () => scrollRef.current?.scrollTo({ y: 0, animated: true }),
-            },
-            { id: 'flights', label: 'Flights', onPress: () => navigation.navigate('Flights') },
-            { id: 'hotels', label: 'Hotels', onPress: () => navigation.navigate('Hotels') },
-            { id: 'holidays', label: 'Holidays', onPress: () => navigation.navigate('Holidays') },
-            { id: 'himachal', label: 'Himachal Tourism', isNew: true, onPress: () => navigation.navigate('Himachal') },
-            { id: 'luxury', label: 'Luxury Trains', isNew: true, onPress: () => navigation.navigate('LuxuryTrains') },
-            { id: 'circuit', label: 'Circuit Planner', onPress: () => navigation.navigate('Circuit') },
-          ]}
-        />
 
         {/* Hero + Search */}
         <LinearGradient colors={['#0E2A47', '#4A4300', '#FEE400']} style={s.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
@@ -295,6 +303,9 @@ export default function HomeScreen({ navigation }) {
         </View>
         <TabGap />
       </ScrollView>
+
+      {/* Top bar ke nav icon se khulne wala drawer — saare menu items andar */}
+      <NavDrawer visible={navOpen} onClose={() => setNavOpen(false)} items={MENU_ITEMS} />
     </SafeAreaView>
   );
 }
