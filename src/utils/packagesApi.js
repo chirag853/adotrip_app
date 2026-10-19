@@ -377,13 +377,17 @@ async function getJson(url, signal, timeoutMs, locFallback = 'India') {
   return list.map((x, i) => normalizePackage(x, i, locFallback));
 }
 
-// ---------- Package detail: GET /api/v1/packages/{slug} ----------
-// Verified Oct 2026: 200 + { status, data: { id, package_name, slug,
-// duration_text, price: { final_price }, banner_image_url, gallery[],
-// description(html), highlights(html), itinerary[], itinerary_html,
-// inclusions(html), exclusions(html), terms(html), cancellation_policy(html),
-// themes[], state_name, similar_packages[] } }
-// Proxy: <proxy>?detail=<slug> -> upstream /api/v1/packages/<slug>
+// ---------- Package detail (proxy: <proxy>?detail=<slug>) ----------
+// Oct 2026: adotrip ne /api/v1/packages/<slug> JSON route hata di (ab 404).
+// Detail data ab website ke holiday page (/holiday/<slug>) me inline script
+// `console.log({...})` banke embedded hai; proxy usse nikaal ke wahi purana
+// envelope { status, data: {...} } return karta hai. Naye field names:
+//   tours_id, package_name, slug, price + final_price, duration (sirf nights),
+//   package_description (pehle description), highlights (HTML),
+//   dw_itinerary (pehle itinerary_html), inclusions/exclusions/terms (HTML),
+//   canc_policy (pehle cancellation_policy), inclusions_checks (JSON string),
+//   theme_name (pehle themes[]), state_name, img + gallery (bare filenames).
+// normalizeDetail purane + naye dono shapes ko handle karta hai.
 function decodeEntities(s) {
   return String(s || '')
     .replace(/&nbsp;/gi, ' ')
@@ -486,41 +490,83 @@ export function parseItineraryHtml(html, structured = []) {
   return out;
 }
 
+// Bare filename ("1792055983_x.jpg") -> https://www.adotrip.com/packages/...
+// Absolute / path-like URL -> waisa hi (toAbsoluteUrl).
+function packageImageUrl(v) {
+  const raw = typeof v === 'string' ? v : v?.url ?? v?.src;
+  const s = String(raw ?? '').trim();
+  if (!s) return undefined;
+  if (/^https?:\/\//i.test(s) || s.startsWith('//') || s.includes('/')) return toAbsoluteUrl(s);
+  return toAbsoluteUrl(`/packages/${s}`);
+}
+
+// Array ya JSON-string ("[\"Hotel\",\"Car\"]") ya comma-string ("Hotel, Car")
+// -> string array. Naye shape me inclusions_checks JSON string me aata hai.
+function toStringArray(v) {
+  if (Array.isArray(v)) return v.map((x) => String(x ?? '').trim()).filter(Boolean);
+  if (typeof v === 'string' && v.trim()) {
+    try {
+      const arr = JSON.parse(v);
+      if (Array.isArray(arr)) return arr.map((x) => String(x ?? '').trim()).filter(Boolean);
+    } catch {}
+    return v.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 export function normalizeDetail(raw) {
   const d = raw?.data ?? raw ?? {};
   const slug = String(d?.slug ?? '').trim();
-  const gallery = Array.isArray(d?.gallery) ? d.gallery : [];
-  const images = gallery
-    .map((g) => toAbsoluteUrl(typeof g === 'string' ? g : g?.url))
-    .filter(Boolean);
-  if (!images.length && d?.banner_image_url) {
-    const b = toAbsoluteUrl(d.banner_image_url);
+
+  // Gallery: naya shape comma-string ("a.jpg,b.jpg"), purana shape array.
+  const galleryList = Array.isArray(d?.gallery)
+    ? d.gallery
+    : typeof d?.gallery === 'string'
+      ? d.gallery.split(',')
+      : [];
+  const images = galleryList.map(packageImageUrl).filter(Boolean);
+  if (!images.length) {
+    // banner: naya `img` (bare filename) / purana `banner_image_url` / `banner_image`
+    const b = packageImageUrl(d?.banner_image_url ?? d?.img ?? d?.banner_image);
     if (b) images.push(b);
   }
+
   const price = toNumber(d?.price?.final_price ?? d?.final_price ?? d?.price, 0) || 6050;
+
+  // Duration: naya `duration` sirf nights (6 -> "6N/7D"); purana
+  // duration_text / duration_nights + duration_days bhi fallback me.
+  const nights = Number(d?.duration_nights ?? d?.duration) || 0;
+  const days = Number(d?.duration_days) || (nights ? nights + 1 : 0);
+  const durationText = String(d?.duration_text ?? '').trim()
+    || (nights ? `${nights}N/${days}D` : '2 Nights / 3 Days');
+
   const similarRaw = Array.isArray(d?.similar_packages) ? d.similar_packages : [];
   return {
-    id: String(d?.id ?? slug ?? ''),
+    id: String(d?.tours_id ?? d?.id ?? slug ?? ''),
     slug,
     title: String(d?.package_name ?? d?.title ?? 'Tour Package'),
-    durationText: String(d?.duration_text ?? '').trim()
-      || `${d?.duration_nights ?? 2} Nights / ${d?.duration_days ?? 3} Days`,
-    nights: Number(d?.duration_nights) || 0,
-    daysCount: Number(d?.duration_days) || 0,
+    durationText,
+    nights,
+    daysCount: days,
     price,
     oldPrice: Math.round(price * 1.2),
     state: String(d?.state_name ?? '').trim(),
     isDomestic: d?.is_domestic !== false,
     images,
-    description: stripHtml(d?.description),
+    description: stripHtml(d?.package_description ?? d?.description),
     highlights: extractListItems(d?.highlights),
-    itinerary: parseItineraryHtml(d?.itinerary_html, d?.itinerary),
+    itinerary: parseItineraryHtml(d?.dw_itinerary ?? d?.itinerary_html, d?.itinerary),
     inclusions: extractListItems(d?.inclusions),
     exclusions: extractListItems(d?.exclusions),
-    inclusionChecks: Array.isArray(d?.inclusions_checks) ? d.inclusions_checks.map(String) : [],
+    inclusionChecks: toStringArray(d?.inclusions_checks),
     terms: extractListItems(d?.terms),
-    cancellation: extractListItems(d?.cancellation_policy),
-    themes: Array.isArray(d?.themes) ? d.themes.map((t) => String(t?.name ?? t ?? '')).filter(Boolean) : [],
+    // canc_policy naye shape me null/object bhi ho sakta hai — sirf string lo.
+    cancellation: extractListItems(
+      typeof d?.canc_policy === 'string' ? d.canc_policy : d?.cancellation_policy
+    ),
+    themes: Array.isArray(d?.themes) && d.themes.length
+      ? d.themes.map((t) => String(t?.name ?? t ?? '')).filter(Boolean)
+      : toStringArray(d?.theme_name),
     pageUrl: String(d?.page_url ?? '').trim() || undefined,
     similar: similarRaw.map((x, i) => normalizePackage(x, i)),
     _raw: d,
@@ -540,7 +586,10 @@ export async function fetchPackageDetail({ slug = '', signal, timeoutMs = 20000 
     return await getDetailJson(url, signal, timeoutMs);
   } catch (e) {
     if (e?.name === 'AbortError') throw e;
-    if (e?.code === 'SSL_VERIFY_FAILED' || e?.code === 'OFFLINE' || e?.code === 'TIMEOUT') {
+    // Direct host: cert chain toota (SSL_VERIFY_FAILED) YA purana detail route
+    // ab 404 deta (NOT_FOUND) — dono case me proxy se try karo. Proxy ab
+    // holiday page ka embedded JSON serve karta hai (<proxy>?detail=<slug>).
+    if (e?.code === 'SSL_VERIFY_FAILED' || e?.code === 'OFFLINE' || e?.code === 'TIMEOUT' || e?.code === 'NOT_FOUND') {
       const candidates = resolveProxyCandidates();
       let lastErr = e;
       for (const proxy of candidates) {

@@ -25,6 +25,32 @@ const agent = new https.Agent({
   keepAlive: true,
 });
 
+// Holiday page (/holiday/<slug>) ke inline <script> me package detail JSON
+// `console.log({...});` ke roop me embedded hota hai. Us object ko nikaalo
+// jisme package ke fields (slug / package_name) hon; warna null.
+// (Page par abhi sirf ek console.log hai, but safe rehne ke liye sab scan
+// karte hain aur string ke andar wale </script> ke liye 3 candidate try.)
+function extractEmbeddedPackage(html) {
+  const marker = 'console.log(';
+  let at = -1;
+  while ((at = html.indexOf(marker, at + 1)) !== -1) {
+    let end = at;
+    for (let tries = 0; tries < 3; tries++) {
+      end = html.indexOf('</script>', end + 1);
+      if (end === -1) break;
+      let s = html.slice(at + marker.length, end).trim();
+      if (s.endsWith(';')) s = s.slice(0, -1).trim();
+      if (s.endsWith(')')) s = s.slice(0, -1).trim();
+      if (!s.startsWith('{') || !s.endsWith('}')) continue;
+      try {
+        const obj = JSON.parse(s);
+        if (obj && typeof obj === 'object' && (obj.slug || obj.package_name)) return obj;
+      } catch {}
+    }
+  }
+  return null;
+}
+
 function send(res, status, body, contentType) {
   res.writeHead(status, {
     'Content-Type': contentType || 'application/json',
@@ -106,8 +132,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Package detail: <proxy>?detail=<slug> -> upstream /api/v1/packages/<slug>
-  // (website page /holiday/<slug> jaisa data — gallery, itinerary, terms.)
+  // Package detail: <proxy>?detail=<slug>
+  // Oct 2026: adotrip ne /api/v1/packages/<slug> JSON route hata di (ab 404
+  // HTML). Detail data ab holiday page ke inline script me embedded hai
+  // (/holiday/<slug> -> console.log({...full package JSON...})). Isliye page
+  // HTML fetch karke wahi JSON extract karke purana envelope
+  // { status, message, data: {...} } return karte hain.
   const detail = q.get('detail');
   if (detail !== null) {
     const slug = String(detail || '').replace(/^\/+|\/+$/g, '').slice(0, 120);
@@ -115,14 +145,23 @@ const server = http.createServer((req, res) => {
       return send(res, 400, JSON.stringify({ error: 'bad detail slug' }));
     }
     const ureq = https.get(
-      `${UPSTREAM}/${encodeURIComponent(slug)}`,
-      { agent, headers: { Accept: 'application/json', 'User-Agent': 'AdotripApp-Proxy/1.0' }, timeout: 20000 },
+      `https://www.adotrip.com/holiday/${encodeURIComponent(slug)}`,
+      { agent, headers: { Accept: 'text/html', 'User-Agent': 'AdotripApp-Proxy/1.0' }, timeout: 20000 },
       (ures) => {
         const chunks = [];
         ures.on('data', (c) => chunks.push(c));
-        ures.on('end', () =>
-          send(res, ures.statusCode || 502, Buffer.concat(chunks), ures.headers['content-type'])
-        );
+        ures.on('end', () => {
+          const status = ures.statusCode || 502;
+          if (status >= 400) {
+            // Slug galat / package removed -> upstream ka status waisa hi pass.
+            return send(res, status, Buffer.concat(chunks), ures.headers['content-type']);
+          }
+          const pkg = extractEmbeddedPackage(Buffer.concat(chunks).toString('utf8'));
+          if (!pkg) {
+            return send(res, 502, JSON.stringify({ error: 'detail data not found in holiday page', slug }));
+          }
+          return send(res, 200, JSON.stringify({ status: true, message: 'Package detail fetched successfully.', data: pkg }));
+        });
       }
     );
     ureq.on('timeout', () => ureq.destroy(new Error('upstream timeout')));

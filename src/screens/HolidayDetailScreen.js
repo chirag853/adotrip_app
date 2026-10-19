@@ -202,6 +202,12 @@ export default function HolidayDetailScreen({ navigation, route }) {
     [slug]
   );
 
+  // Retry — fallback banner aur full-error view dono yahi use karte hain.
+  const retry = useCallback(() => {
+    const ctrl = new AbortController();
+    load(ctrl.signal);
+  }, [load]);
+
   useEffect(() => {
     const ctrl = new AbortController();
     load(ctrl.signal);
@@ -303,13 +309,7 @@ export default function HolidayDetailScreen({ navigation, route }) {
           <Text style={s.errT}>
             {error.code === 'NOT_FOUND' ? 'Package not found.' : "Couldn't load package details."}
           </Text>
-          <TouchableOpacity
-            style={s.retryBtn}
-            onPress={() => {
-              const ctrl = new AbortController();
-              load(ctrl.signal);
-            }}
-          >
+          <TouchableOpacity style={s.retryBtn} onPress={retry}>
             <Text style={s.retryT}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -317,6 +317,20 @@ export default function HolidayDetailScreen({ navigation, route }) {
 
       {d && (
         <>
+          {!!error && (
+            <View style={s.liveErr}>
+              <Ionicons name="cloud-offline-outline" size={16} color={COLORS.danger} />
+              <Text style={s.liveErrT} numberOfLines={2}>
+                {error.code === 'NOT_FOUND'
+                  ? 'Live details not found — showing basic info only.'
+                  : "Live details couldn't load — itinerary & highlights may be missing."}
+              </Text>
+              <TouchableOpacity onPress={retry} hitSlop={8} style={s.liveErrBtn}>
+                <Text style={s.liveErrBtnT}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <ScrollView
             ref={scrollRef}
             showsVerticalScrollIndicator={false}
@@ -704,4 +718,8 @@ const s = StyleSheet.create({
   errT: { fontWeight: '800', color: COLORS.secondary, fontSize: 14, textAlign: 'center' },
   retryBtn: { backgroundColor: COLORS.secondary, borderRadius: 10, paddingHorizontal: 24, height: 44, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
   retryT: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  liveErr: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF2F2', borderBottomWidth: 1, borderColor: '#FECACA', paddingHorizontal: 16, paddingVertical: 10 },
+  liveErrT: { flex: 1, fontSize: 12, color: '#7F1D1D', fontWeight: '600' },
+  liveErrBtn: { backgroundColor: COLORS.danger, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  liveErrBtnT: { color: '#fff', fontWeight: '800', fontSize: 12 },
 });
