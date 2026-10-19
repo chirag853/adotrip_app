@@ -586,9 +586,10 @@ export async function fetchPackageDetail({ slug = '', signal, timeoutMs = 20000 
     return await getDetailJson(url, signal, timeoutMs);
   } catch (e) {
     if (e?.name === 'AbortError') throw e;
-    // Direct host: cert chain toota (SSL_VERIFY_FAILED) YA purana detail route
-    // ab 404 deta (NOT_FOUND) — dono case me proxy se try karo. Proxy ab
-    // holiday page ka embedded JSON serve karta hai (<proxy>?detail=<slug>).
+    // Direct host: cert chain toota (SSL_VERIFY_FAILED) YA detail route ne
+    // 404 diya (NOT_FOUND) — dono case me proxy se try karo. Proxy pehle
+    // asli API (/packages/<slug>) hit karta hai, fail par holiday page ka
+    // embedded JSON: <proxy>?detail=<slug>.
     if (e?.code === 'SSL_VERIFY_FAILED' || e?.code === 'OFFLINE' || e?.code === 'TIMEOUT' || e?.code === 'NOT_FOUND') {
       const candidates = resolveProxyCandidates();
       let lastErr = e;

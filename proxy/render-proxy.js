@@ -51,6 +51,34 @@ function extractEmbeddedPackage(html) {
   return null;
 }
 
+// Fallback tab jab /api/v1/packages/<slug> JSON route na chale (Oct 2026 me
+// ek baar 404 ho gayi thi): holiday page ka embedded JSON nikaal ke serve karo.
+function holidayPageDetail(slug, res) {
+  const ureq = https.get(
+    `https://www.adotrip.com/holiday/${encodeURIComponent(slug)}`,
+    { agent, headers: { Accept: 'text/html', 'User-Agent': 'AdotripApp-Proxy/1.0' }, timeout: 20000 },
+    (ures) => {
+      const chunks = [];
+      ures.on('data', (c) => chunks.push(c));
+      ures.on('end', () => {
+        const status = ures.statusCode || 502;
+        if (status >= 400) {
+          // Slug galat / package removed -> upstream ka status waisa hi pass.
+          return send(res, status, Buffer.concat(chunks), ures.headers['content-type']);
+        }
+        const pkg = extractEmbeddedPackage(Buffer.concat(chunks).toString('utf8'));
+        if (!pkg) {
+          return send(res, 502, JSON.stringify({ error: 'detail data not found in holiday page', slug }));
+        }
+        return send(res, 200, JSON.stringify({ status: true, message: 'Package detail fetched successfully.', data: pkg }));
+      });
+    }
+  );
+  ureq.on('timeout', () => ureq.destroy(new Error('upstream timeout')));
+  ureq.on('error', (e) => send(res, 502, JSON.stringify({ error: 'upstream failed', detail: e.message })));
+  return ureq;
+}
+
 function send(res, status, body, contentType) {
   res.writeHead(status, {
     'Content-Type': contentType || 'application/json',
@@ -133,39 +161,50 @@ const server = http.createServer((req, res) => {
   }
 
   // Package detail: <proxy>?detail=<slug>
-  // Oct 2026: adotrip ne /api/v1/packages/<slug> JSON route hata di (ab 404
-  // HTML). Detail data ab holiday page ke inline script me embedded hai
-  // (/holiday/<slug> -> console.log({...full package JSON...})). Isliye page
-  // HTML fetch karke wahi JSON extract karke purana envelope
-  // { status, message, data: {...} } return karte hain.
+  // Pehle ASLI JSON API hit karte hain: /api/v1/packages/<slug> (jaisi app
+  // direct bhi try karti hai) — list wale slug ko aage laga ke.
+  // Agar woh route na chale (Oct 2026 me 404 ho gayi thi) to fallback:
+  // holiday page (/holiday/<slug>) ka embedded console.log({...}) JSON.
+  // Dono me se jo mile, wahi { status, message, data } envelope me jaata hai.
   const detail = q.get('detail');
   if (detail !== null) {
     const slug = String(detail || '').replace(/^\/+|\/+$/g, '').slice(0, 120);
     if (!/^[A-Za-z0-9-_]+$/.test(slug)) {
       return send(res, 400, JSON.stringify({ error: 'bad detail slug' }));
     }
-    const ureq = https.get(
-      `https://www.adotrip.com/holiday/${encodeURIComponent(slug)}`,
-      { agent, headers: { Accept: 'text/html', 'User-Agent': 'AdotripApp-Proxy/1.0' }, timeout: 20000 },
-      (ures) => {
+
+    const apiReq = https.get(
+      `https://www.adotrip.com/api/v1/packages/${encodeURIComponent(slug)}`,
+      { agent, headers: { Accept: 'application/json', 'User-Agent': 'AdotripApp-Proxy/1.0' }, timeout: 20000 },
+      (ares) => {
         const chunks = [];
-        ures.on('data', (c) => chunks.push(c));
-        ures.on('end', () => {
-          const status = ures.statusCode || 502;
-          if (status >= 400) {
-            // Slug galat / package removed -> upstream ka status waisa hi pass.
-            return send(res, status, Buffer.concat(chunks), ures.headers['content-type']);
+        ares.on('data', (c) => chunks.push(c));
+        ares.on('end', () => {
+          const status = ares.statusCode || 502;
+          const body = Buffer.concat(chunks).toString('utf8');
+          let json = null;
+          try {
+            json = JSON.parse(body);
+          } catch {}
+          const pkg = json?.data;
+          if (
+            status >= 200 && status < 300 &&
+            pkg && typeof pkg === 'object' && (pkg.slug || pkg.package_name)
+          ) {
+            // Asli API chal rahi hai -> pass-through.
+            return send(res, 200, JSON.stringify({
+              status: true,
+              message: json.message || 'Package detail fetched successfully.',
+              data: pkg,
+            }));
           }
-          const pkg = extractEmbeddedPackage(Buffer.concat(chunks).toString('utf8'));
-          if (!pkg) {
-            return send(res, 502, JSON.stringify({ error: 'detail data not found in holiday page', slug }));
-          }
-          return send(res, 200, JSON.stringify({ status: true, message: 'Package detail fetched successfully.', data: pkg }));
+          // API route gayab/fail (404, HTML, etc.) -> holiday page fallback.
+          return holidayPageDetail(slug, res);
         });
       }
     );
-    ureq.on('timeout', () => ureq.destroy(new Error('upstream timeout')));
-    ureq.on('error', (e) => send(res, 502, JSON.stringify({ error: 'upstream failed', detail: e.message })));
+    apiReq.on('timeout', () => apiReq.destroy(new Error('upstream timeout')));
+    apiReq.on('error', () => holidayPageDetail(slug, res));
     return;
   }
 
