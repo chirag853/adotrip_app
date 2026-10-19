@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AdoLogo from '../components/AdoLogo';
+import TopMenu from '../components/TopMenu';
 import { SectionHeader, Chip, Rating, HotelImg, CoverImg, TabGap } from '../components/UI';
 import { COLORS, RADIUS, SHADOW } from '../theme';
 import { OFFERS, PACKAGES, FLIGHT_ROUTES, HOTELS, DESTINATIONS, BLOGS, FAQS } from '../data/appData';
@@ -47,6 +48,7 @@ export default function HomeScreen({ navigation }) {
   const [hotelCity, setHotelCity] = useState('Goa');
   const [hotelIn, setHotelIn] = useState('12 Oct 2026');
   const [hotelOut, setHotelOut] = useState('14 Oct 2026');
+  const scrollRef = useRef(null);
 
   const goSearch = () => {
     const r = TABS.find((t) => t.id === tab)?.route || 'Flights';
@@ -60,7 +62,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={s.topBar}>
           <AdoLogo showTagline />
@@ -73,6 +75,24 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Website jaisa menu — logo ke neeche (NEW ribbon Himachal + Luxury Trains par) */}
+        <TopMenu
+          items={[
+            {
+              id: 'home',
+              label: 'Home',
+              active: true,
+              onPress: () => scrollRef.current?.scrollTo({ y: 0, animated: true }),
+            },
+            { id: 'flights', label: 'Flights', onPress: () => navigation.navigate('Flights') },
+            { id: 'hotels', label: 'Hotels', onPress: () => navigation.navigate('Hotels') },
+            { id: 'holidays', label: 'Holidays', onPress: () => navigation.navigate('Holidays') },
+            { id: 'himachal', label: 'Himachal Tourism', isNew: true, onPress: () => navigation.navigate('Himachal') },
+            { id: 'luxury', label: 'Luxury Trains', isNew: true, onPress: () => navigation.navigate('LuxuryTrains') },
+            { id: 'circuit', label: 'Circuit Planner', onPress: () => navigation.navigate('Circuit') },
+          ]}
+        />
 
         {/* Hero + Search */}
         <LinearGradient colors={['#0E2A47', '#4A4300', '#FEE400']} style={s.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>

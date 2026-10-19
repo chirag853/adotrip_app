@@ -27,6 +27,7 @@ import CheckoutScreen from '../screens/CheckoutScreen';
 import ConfirmScreen from '../screens/ConfirmScreen';
 import AuthScreen from '../screens/AuthScreen';
 import { AboutScreen, ContactScreen, SupportScreen } from '../screens/InfoScreens';
+import ComingSoonScreen from '../screens/ComingSoonScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -82,6 +83,26 @@ export default function AppNavigator() {
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Contact" component={ContactScreen} />
       <Stack.Screen name="Support" component={SupportScreen} />
+      <Stack.Screen
+        name="Himachal"
+        component={ComingSoonScreen}
+        initialParams={{
+          title: 'Himachal Tourism',
+          emoji: '🏔️',
+          blurb: 'Manali se Spiti tak — Himachal ka full section (destinations, packages, hotels) jald hi aa raha hai.',
+          highlights: ['Manali', 'Shimla', 'Dharamshala', 'Kasol', 'Spiti Valley'],
+        }}
+      />
+      <Stack.Screen
+        name="LuxuryTrains"
+        component={ComingSoonScreen}
+        initialParams={{
+          title: 'Luxury Trains',
+          emoji: '🚂',
+          blurb: 'Palace on Wheels jaisi royal train journeys — routes, itineraries aur booking jald hi yahan.',
+          highlights: ['Palace on Wheels', "Maharajas' Express", 'Golden Chariot', 'Deccan Odyssey'],
+        }}
+      />
     </Stack.Navigator>
   );
 }
