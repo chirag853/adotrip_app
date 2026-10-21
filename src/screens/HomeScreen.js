@@ -594,16 +594,41 @@ export default function HomeScreen({ navigation }) {
     {
       id: 'home',
       label: 'Home',
+      subtitle: "Discover what's new",
+      group: 'EXPLORE',
       icon: 'home-outline',
       active: true,
       onPress: () => scrollRef.current?.scrollTo({ y: 0, animated: true }),
     },
-    { id: 'flights', label: 'Flights', icon: 'airplane-outline', onPress: () => navigation.navigate('Flights') },
-    { id: 'hotels', label: 'Hotels', icon: 'bed-outline', onPress: () => navigation.navigate('Hotels') },
-    { id: 'holidays', label: 'Holidays', icon: 'map-outline', onPress: () => navigation.navigate('Holidays') },
+    {
+      id: 'flights',
+      label: 'Flights',
+      subtitle: 'Best fares, 100+ airlines',
+      group: 'EXPLORE',
+      icon: 'airplane-outline',
+      onPress: () => navigation.navigate('Flights'),
+    },
+    {
+      id: 'hotels',
+      label: 'Hotels',
+      subtitle: '50,000+ stays across India',
+      group: 'EXPLORE',
+      icon: 'bed-outline',
+      onPress: () => navigation.navigate('Hotels'),
+    },
+    {
+      id: 'holidays',
+      label: 'Holidays',
+      subtitle: 'Curated packages & offers',
+      group: 'EXPLORE',
+      icon: 'map-outline',
+      onPress: () => navigation.navigate('Holidays'),
+    },
     {
       id: 'himachal',
       label: 'Himachal Tourism',
+      subtitle: 'Official HPTDC hotels',
+      group: 'EXPERIENCES',
       icon: 'trail-sign-outline',
       isNew: true,
       onPress: () => navigation.navigate('Himachal'),
@@ -611,6 +636,8 @@ export default function HomeScreen({ navigation }) {
     {
       id: 'luxury',
       label: 'Luxury Trains',
+      subtitle: 'Royal rail journeys',
+      group: 'EXPERIENCES',
       icon: 'train-outline',
       isNew: true,
       onPress: () => navigation.navigate('LuxuryTrains'),
@@ -618,6 +645,8 @@ export default function HomeScreen({ navigation }) {
     {
       id: 'circuit',
       label: 'Circuit Planner',
+      subtitle: 'Build an AI itinerary',
+      group: 'EXPERIENCES',
       icon: 'sparkles-outline',
       onPress: () => navigation.navigate('Circuit'),
     },
@@ -989,7 +1018,12 @@ export default function HomeScreen({ navigation }) {
         <Ionicons name="logo-whatsapp" size={23} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <NavDrawer visible={navOpen} onClose={() => setNavOpen(false)} items={MENU_ITEMS} />
+      <NavDrawer
+        visible={navOpen}
+        onClose={() => setNavOpen(false)}
+        items={MENU_ITEMS}
+        onSupport={openWhatsApp}
+      />
     </SafeAreaView>
   );
 }
