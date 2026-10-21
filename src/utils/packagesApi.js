@@ -90,6 +90,7 @@ export function normalizePackage(raw, idx = 0, fallbackLocation = 'India') {
       'places',
       'route',
       'sector',
+      'state_name',
     ]) ?? pickFirst(r?.destination || {}, ['name', 'title']) ?? ''
   ).trim();
 
@@ -136,7 +137,7 @@ export function normalizePackage(raw, idx = 0, fallbackLocation = 'India') {
   const days = typeof durRaw === 'number' && Number.isFinite(durRaw) && durRaw > 0
     ? `${durRaw}N/${durRaw + 1}D`
     : String(durRaw ?? '');
-  let tag = String(pickFirst(r, ['tag', 'category', 'type', 'badge', 'label']) ?? '');
+  let tag = String(pickFirst(r, ['tag', 'category', 'type', 'badge', 'label', 'theme_name']) ?? '');
   if (!tag) {
     // Derive a useful tag from the title when API sends none
     const tl = `${title} ${id}`.toLowerCase();
@@ -267,12 +268,23 @@ async function getSubthemes(url, signal, timeoutMs) {
   const raw = json?.data?.subthemes ?? json?.data ?? [];
   const list = Array.isArray(raw) ? raw : [];
   return list
-    .map((t) => ({
-      id: String(t?.id ?? t?.slug ?? t?.name ?? ''),
-      name: String(t?.name ?? '').trim(),
-      slug: String(t?.slug ?? '').trim(),
-      total_count: Number(t?.total_count ?? 0) || 0,
-    }))
+    .map((t) => {
+      const slug = String(t?.slug ?? '').trim();
+      const suppliedUrl = String(t?.packages_url ?? '').trim();
+      return {
+        id: String(t?.id ?? slug ?? t?.name ?? ''),
+        name: String(t?.name ?? '').trim(),
+        slug,
+        // Chips must call the theme-specific endpoint from the API response.
+        packages_url:
+          toAbsoluteUrl(suppliedUrl) ||
+          (slug ? `${SITE_URL}/api/v1/holidays/${slug}/packages` : ''),
+        page_url: String(t?.page_url ?? '').trim(),
+        total_count: Number(t?.total_count ?? 0) || 0,
+        domestic_count: Number(t?.domestic_count ?? 0) || 0,
+        international_count: Number(t?.international_count ?? 0) || 0,
+      };
+    })
     .filter((t) => t.name);
 }
 // NOTE: Never add an SSL bypass (trust-all / rejectUnauthorized:false) here —
@@ -312,6 +324,43 @@ export async function fetchPackages({ search = '', perPage = 10, signal, timeout
           lastErr = pe;
           lastErr.cause = `${e.message} | proxy ${proxy}: ${pe.message}`;
           // Try next candidate (e.g. local proxy not running -> try next).
+        }
+      }
+      throw lastErr;
+    }
+    throw e;
+  }
+}
+
+// Theme chip endpoint: fetch the exact `packages_url` returned by
+// GET /api/v1/subthemes (e.g. /api/v1/holidays/beach-theme-tours-packages/packages).
+export async function fetchPackagesByUrl({ url, signal, timeoutMs = 20000 } = {}) {
+  const target = toAbsoluteUrl(url);
+  if (!target) {
+    const err = new Error('This theme has no packages URL.');
+    err.code = 'BAD_URL';
+    throw err;
+  }
+
+  try {
+    return await getJson(target, signal, timeoutMs);
+  } catch (e) {
+    if (e?.name === 'AbortError') throw e;
+    if (e?.code === 'SSL_VERIFY_FAILED' || e?.code === 'OFFLINE' || e?.code === 'TIMEOUT') {
+      const candidates = resolveProxyCandidates();
+      let lastErr = e;
+      for (const proxy of candidates) {
+        const proxyUrl = `${proxy}?packages_url=${encodeURIComponent(target)}`;
+        try {
+          const list = await getJson(proxyUrl, signal, timeoutMs);
+          return list.map((p) => ({
+            ...p,
+            image: proxiedImageUrl(proxy, p.imageDirect || p.image),
+          }));
+        } catch (pe) {
+          if (pe?.name === 'AbortError') throw pe;
+          lastErr = pe;
+          lastErr.cause = `${e.message} | proxy ${proxy}: ${pe.message}`;
         }
       }
       throw lastErr;

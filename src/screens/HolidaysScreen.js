@@ -13,10 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../theme';
 import { SectionHeader, Chip, Rating, CoverImg, ScreenHeader, TabGap } from '../components/UI';
-import { fetchPackages, fetchSubthemes } from '../utils/packagesApi';
+import { fetchPackages, fetchPackagesByUrl, fetchSubthemes } from '../utils/packagesApi';
 import { PACKAGES } from '../data/appData';
 
 // Top chips: ONLY live subtheme `name`s from GET /api/v1/subthemes.
+// Chip press -> us theme ka `packages_url` API response se utha kar wahi hit
+// hota hai (e.g. /api/v1/holidays/beach-theme-tours-packages/packages).
 // No hardcoded filters — API fail ho to sirf 'All' dikhega.
 
 function applyFilter(base, f) {
@@ -37,7 +39,8 @@ function applyFilter(base, f) {
 }
 
 export default function HolidaysScreen({ navigation }) {
-  const [f, setF] = useState('All');
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [activeThemeUrl, setActiveThemeUrl] = useState('');
   // Text shown in the box vs text sent to the API — sent on Search press
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
@@ -71,14 +74,16 @@ export default function HolidaysScreen({ navigation }) {
     return () => ctrl.abort();
   }, []);
 
-  // Live API only: GET /api/v1/packages?per_page=10&search=<query>
-  // No bundled fallback — API fail = error + Retry, kuch aur nahi dikhega.
-  const load = useCallback(async (searchText, signal, opts = {}) => {
+  // 'All' -> package search API. Theme chip -> exact `packages_url` from
+  // /api/v1/subthemes. API fail = error + Retry, with bundled fallback cards.
+  const load = useCallback(async (searchText, themeUrl, signal, opts = {}) => {
     if (opts.refresh) setRefreshing(true);
     else setLoading(true);
     setApiError(null);
     try {
-      const data = await fetchPackages({ search: searchText, perPage: 10, signal });
+      const data = themeUrl
+        ? await fetchPackagesByUrl({ url: themeUrl, signal })
+        : await fetchPackages({ search: searchText, perPage: 10, signal });
       if (signal?.aborted) return;
       setApiList(data);
       // Empty result for a search query is still a successful API call —
@@ -101,23 +106,44 @@ export default function HolidaysScreen({ navigation }) {
 
   useEffect(() => {
     const ctrl = new AbortController();
-    load(query, ctrl.signal);
+    load(query, activeThemeUrl, ctrl.signal);
     return () => ctrl.abort();
-  }, [query, load]);
+  }, [query, activeThemeUrl, load]);
 
-  const onSearch = () => setQuery(input.trim());
+  const onSearch = () => {
+    setActiveFilter('All');
+    setActiveThemeUrl('');
+    setQuery(input.trim());
+  };
   const onClear = () => {
     setInput('');
     setQuery('');
+    setActiveFilter('All');
+    setActiveThemeUrl('');
   };
-  const onRefresh = () => load(query, undefined, { refresh: true });
+  const onRefresh = () => load(query, activeThemeUrl, undefined, { refresh: true });
+
+  const selectFilter = (name) => {
+    setActiveFilter(name);
+    setInput('');
+    setQuery('');
+    if (name === 'All') {
+      setActiveThemeUrl('');
+      return;
+    }
+    const theme = themes.find((t) => t.name === name);
+    setActiveThemeUrl(theme?.packages_url || '');
+  };
 
   // Live list first. API fail (subah chalta tha / proxy band / offline) ->
   // bundled PACKAGES fallback taaki screen kabhi blank na rahe.
   // Search ka genuine empty result (hasApi) par fallback nahi.
   const base = apiList.length ? apiList : (!hasApi && apiError ? PACKAGES : apiList);
-  const show = applyFilter(base, f);
+  const show =
+    activeThemeUrl && hasApi && !apiError ? apiList : applyFilter(base, activeFilter);
   const usingFallback = !hasApi && !!apiError;
+  const sectionTitle =
+    activeFilter === 'All' ? 'Budget Tour Packages' : `${activeFilter} Packages`;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
@@ -164,12 +190,12 @@ export default function HolidaysScreen({ navigation }) {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
           {FILTERS.map((x) => (
-            <Chip key={x} label={x} active={f === x} onPress={() => setF(x)} />
+            <Chip key={x} label={x} active={activeFilter === x} onPress={() => selectFilter(x)} />
           ))}
         </ScrollView>
 
         <SectionHeader
-          title="Budget Tour Packages"
+          title={sectionTitle}
           subtitle={`${show.length} packages • EMI available${query ? ` • "${query}"` : ''}${hasApi ? ' • Live' : usingFallback ? ' • Popular' : ''}`}
         />
 
@@ -194,7 +220,7 @@ export default function HolidaysScreen({ navigation }) {
                 })()}
               </Text>
             </View>
-            <TouchableOpacity style={s.retryBtn} onPress={() => load(query, undefined, { refresh: true })} activeOpacity={0.85}>
+            <TouchableOpacity style={s.retryBtn} onPress={() => load(query, activeThemeUrl, undefined, { refresh: true })} activeOpacity={0.85}>
               <Text style={s.retryT}>Retry</Text>
             </TouchableOpacity>
           </View>

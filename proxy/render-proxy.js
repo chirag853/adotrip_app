@@ -208,6 +208,40 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Theme packages: <proxy>?packages_url=<encoded /api/v1/holidays/.../packages>
+  // Holidays screen ke chips /api/v1/subthemes ke response se yahi URL use karte hain.
+  const themePackagesUrl = q.get('packages_url');
+  if (themePackagesUrl !== null) {
+    let target;
+    try {
+      target = new URL(themePackagesUrl);
+    } catch {
+      return send(res, 400, JSON.stringify({ error: 'bad packages_url' }));
+    }
+    const allowed =
+      /^www\.adotrip\.com$/i.test(target.hostname) &&
+      /^\/api\/v1\/(holidays|packages)\//.test(target.pathname) &&
+      /\/packages\/?$/.test(target.pathname);
+    if (!allowed) {
+      return send(res, 403, JSON.stringify({ error: 'packages_url host/path not allowed' }));
+    }
+
+    const treq = https.get(
+      target.toString(),
+      { agent, headers: { Accept: 'application/json', 'User-Agent': 'AdotripApp-Proxy/1.0' }, timeout: 20000 },
+      (tres) => {
+        const chunks = [];
+        tres.on('data', (c) => chunks.push(c));
+        tres.on('end', () =>
+          send(res, tres.statusCode || 502, Buffer.concat(chunks), tres.headers['content-type'])
+        );
+      }
+    );
+    treq.on('timeout', () => treq.destroy(new Error('upstream timeout')));
+    treq.on('error', (e) => send(res, 502, JSON.stringify({ error: 'upstream failed', detail: e.message })));
+    return;
+  }
+
   const perPage = Math.min(50, Math.max(1, parseInt(q.get('per_page'), 10) || 10));
   const search = String(q.get('search') || '').slice(0, 60);
 
