@@ -93,6 +93,10 @@ export default function NavDrawer({ visible, onClose, items = [], onSupport }) {
           <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
         </Animated.View>
 
+        {/* Keep the translucent status bar readable: the panel's navy hero
+            and the dimmed screen meet at the top edge. */}
+        <View pointerEvents="none" style={[s.statusScrim, { height: Math.max(insets.top, 0) }]} />
+
         <Animated.View
           style={[
             s.panel,
@@ -251,6 +255,13 @@ const s = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(4,15,30,0.58)',
+  },
+  statusScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#0B2440',
   },
   panel: {
     position: 'absolute',

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
+  FlatList,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -14,31 +15,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../theme';
 import { SectionHeader, Chip, Rating, CoverImg, ScreenHeader, TabGap } from '../components/UI';
 import { fetchPackages, fetchPackagesByUrl, fetchSubthemes } from '../utils/packagesApi';
-import { PACKAGES } from '../data/appData';
 
 // Top chips: ONLY live subtheme `name`s from GET /api/v1/subthemes.
-// Chip press -> us theme ka `packages_url` API response se utha kar wahi hit
-// hota hai (e.g. /api/v1/holidays/beach-theme-tours-packages/packages).
-// No hardcoded filters — API fail ho to sirf 'All' dikhega.
-
-function applyFilter(base, f) {
-  if (!Array.isArray(base)) return [];
-  if (f === 'All') return base;
-  const fl = String(f).toLowerCase();
-  // "Beach Theme" -> match packages with "beach" in tag/location/title
-  const words = fl.split(/[^a-z]+/i).filter((w) => w.length >= 4);
-  const out = base.filter((p) => {
-    const tag = String(p.tag || '').toLowerCase();
-    const loc = String(p.location || '').toLowerCase();
-    const title = String(p.title || '').toLowerCase();
-    if (tag === fl) return true;
-    if (loc.includes(fl) || title.includes(fl)) return true;
-    return words.some((w) => tag.includes(w) || loc.includes(w) || title.includes(w));
-  });
-  return out.length ? out : base;
-}
+// Chip press -> us theme ka `packages_url` response se utha kar wahi hit hota
+// hai. API jo bhi packages deti hai (saare pages), bas wahi dikhte hain —
+// koi local/static fallback nahi.
 
 export default function HolidaysScreen({ navigation }) {
+  const listRef = useRef(null);
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeThemeUrl, setActiveThemeUrl] = useState('');
   // Text shown in the box vs text sent to the API — sent on Search press
@@ -75,25 +59,30 @@ export default function HolidaysScreen({ navigation }) {
   }, []);
 
   // 'All' -> package search API. Theme chip -> exact `packages_url` from
-  // /api/v1/subthemes. API fail = error + Retry, with bundled fallback cards.
+  // /api/v1/subthemes. Both functions fetch every page; API fail = error +
+  // Retry only. No local/static packages are ever mixed into this list.
   const load = useCallback(async (searchText, themeUrl, signal, opts = {}) => {
     if (opts.refresh) setRefreshing(true);
-    else setLoading(true);
+    else {
+      setLoading(true);
+      setApiList([]);
+    }
     setApiError(null);
     try {
       const data = themeUrl
         ? await fetchPackagesByUrl({ url: themeUrl, signal })
-        : await fetchPackages({ search: searchText, perPage: 10, signal });
+        : await fetchPackages({ search: searchText, signal });
       if (signal?.aborted) return;
       setApiList(data);
       // Empty result for a search query is still a successful API call —
-      // show "No packages found", not the offline fallback.
+      // show "No packages found", not an offline fallback.
       setHasApi(true);
       setApiError(null);
     } catch (e) {
       if (e?.name === 'AbortError') return;
       // Keep the full error (message + code) — the banner needs `code`
       // to tell SSL vs offline vs server apart.
+      setApiList([]);
       setApiError(e);
       setHasApi(false);
     } finally {
@@ -110,12 +99,20 @@ export default function HolidaysScreen({ navigation }) {
     return () => ctrl.abort();
   }, [query, activeThemeUrl, load]);
 
+  const scrollTop = () => {
+    try {
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    } catch {}
+  };
+
   const onSearch = () => {
+    scrollTop();
     setActiveFilter('All');
     setActiveThemeUrl('');
     setQuery(input.trim());
   };
   const onClear = () => {
+    scrollTop();
     setInput('');
     setQuery('');
     setActiveFilter('All');
@@ -124,6 +121,7 @@ export default function HolidaysScreen({ navigation }) {
   const onRefresh = () => load(query, activeThemeUrl, undefined, { refresh: true });
 
   const selectFilter = (name) => {
+    scrollTop();
     setActiveFilter(name);
     setInput('');
     setQuery('');
@@ -135,13 +133,8 @@ export default function HolidaysScreen({ navigation }) {
     setActiveThemeUrl(theme?.packages_url || '');
   };
 
-  // Live list first. API fail (subah chalta tha / proxy band / offline) ->
-  // bundled PACKAGES fallback taaki screen kabhi blank na rahe.
-  // Search ka genuine empty result (hasApi) par fallback nahi.
-  const base = apiList.length ? apiList : (!hasApi && apiError ? PACKAGES : apiList);
-  const show =
-    activeThemeUrl && hasApi && !apiError ? apiList : applyFilter(base, activeFilter);
-  const usingFallback = !hasApi && !!apiError;
+  // Exactly what the API returned (all pages already merged in packagesApi).
+  const show = apiList;
   const sectionTitle =
     activeFilter === 'All' ? 'Budget Tour Packages' : `${activeFilter} Packages`;
 
@@ -160,88 +153,12 @@ export default function HolidaysScreen({ navigation }) {
           </TouchableOpacity>
         }
       />
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {/* 🔍 Search — this value is passed as `&search=kerala` */}
-        <View style={s.searchRow}>
-          <View style={s.searchBox}>
-            <Ionicons name="search-outline" size={18} color={COLORS.textLight} style={{ marginRight: 8 }} />
-            <TextInput
-              style={s.searchInput}
-              value={input}
-              onChangeText={setInput}
-              placeholder="Search: kerala, goa, dubai…"
-              placeholderTextColor="#9CA3AF"
-              returnKeyType="search"
-              onSubmitEditing={onSearch}
-            />
-            {input.length > 0 && (
-              <TouchableOpacity onPress={onClear} hitSlop={10}>
-                <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
-              </TouchableOpacity>
-            )}
-          </View>
-          <TouchableOpacity style={s.searchBtn} onPress={onSearch} activeOpacity={0.85}>
-            <Text style={s.searchBtnT}>Search</Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
-          {FILTERS.map((x) => (
-            <Chip key={x} label={x} active={activeFilter === x} onPress={() => selectFilter(x)} />
-          ))}
-        </ScrollView>
-
-        <SectionHeader
-          title={sectionTitle}
-          subtitle={`${show.length} packages • EMI available${query ? ` • "${query}"` : ''}${hasApi ? ' • Live' : usingFallback ? ' • Popular' : ''}`}
-        />
-
-        {!loading && apiError && (
-          <View style={s.errBox}>
-            <Ionicons name="cloud-offline-outline" size={22} color={COLORS.danger} />
-            <View style={{ flex: 1 }}>
-              <Text style={s.errT}>
-                {apiError.code === 'OFFLINE'
-                  ? 'No internet connection.'
-                  : apiError.code === 'TIMEOUT'
-                    ? 'Request timed out.'
-                    : apiError.code === 'SERVER'
-                      ? 'Server busy.'
-                      : "Couldn't load live packages."}
-              </Text>
-              <Text style={s.errS}>
-                Showing popular packages • Run `npm run proxy:restart` • Tap Retry
-                {(() => {
-                  const m = String(apiError.cause || '').match(/proxy\s+(https?:\/\/[^/\s:]+(?::\d+)?)/i);
-                  return m ? ` • Trying: ${m[1]}` : '';
-                })()}
-              </Text>
-            </View>
-            <TouchableOpacity style={s.retryBtn} onPress={() => load(query, activeThemeUrl, undefined, { refresh: true })} activeOpacity={0.85}>
-              <Text style={s.retryT}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {loading && apiList.length === 0 && (
-          <View style={s.center}>
-            <ActivityIndicator size="large" color={COLORS.secondary} />
-            <Text style={s.muted}>Loading packages…</Text>
-          </View>
-        )}
-
-        {!loading && hasApi && !apiError && show.length === 0 && (
-          <View style={s.center}>
-            <Text style={s.muted}>No packages found{query ? ` for "${query}"` : ''}.</Text>
-          </View>
-        )}
-
-        {show.map((p) => (
+      <FlatList
+        ref={listRef}
+        data={show}
+        keyExtractor={(p, i) => String(p.id || p.slug || p.title || `pkg-${i}`)}
+        renderItem={({ item: p }) => (
           <TouchableOpacity
-            key={String(p.id)}
             style={s.card}
             onPress={() => navigation.navigate('HolidayDetail', { slug: p.slug, item: p })}
           >
@@ -268,9 +185,93 @@ export default function HolidaysScreen({ navigation }) {
               </View>
             </View>
           </TouchableOpacity>
-        ))}
-        <TabGap />
-      </ScrollView>
+        )}
+        ListHeaderComponent={
+          <>
+            {/* 🔍 Search — this value is passed as `&search=kerala` */}
+            <View style={s.searchRow}>
+              <View style={s.searchBox}>
+                <Ionicons name="search-outline" size={18} color={COLORS.textLight} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={s.searchInput}
+                  value={input}
+                  onChangeText={setInput}
+                  placeholder="Search: kerala, goa, dubai…"
+                  placeholderTextColor="#9CA3AF"
+                  returnKeyType="search"
+                  onSubmitEditing={onSearch}
+                />
+                {input.length > 0 && (
+                  <TouchableOpacity onPress={onClear} hitSlop={10}>
+                    <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <TouchableOpacity style={s.searchBtn} onPress={onSearch} activeOpacity={0.85}>
+                <Text style={s.searchBtnT}>Search</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+              {FILTERS.map((x) => (
+                <Chip key={x} label={x} active={activeFilter === x} onPress={() => selectFilter(x)} />
+              ))}
+            </ScrollView>
+
+            <SectionHeader
+              title={sectionTitle}
+              subtitle={`${show.length} packages • EMI available${query ? ` • "${query}"` : ''}${hasApi ? ' • Live' : ''}`}
+            />
+
+            {!loading && apiError && (
+              <View style={s.errBox}>
+                <Ionicons name="cloud-offline-outline" size={22} color={COLORS.danger} />
+                <View style={{ flex: 1 }}>
+                  <Text style={s.errT}>
+                    {apiError.code === 'OFFLINE'
+                      ? 'No internet connection.'
+                      : apiError.code === 'TIMEOUT'
+                        ? 'Request timed out.'
+                        : apiError.code === 'SERVER'
+                          ? 'Server busy.'
+                          : "Couldn't load live packages."}
+                  </Text>
+                  <Text style={s.errS}>Live API se data load nahi ho paaya. Tap Retry.</Text>
+                </View>
+                <TouchableOpacity
+                  style={s.retryBtn}
+                  onPress={() => load(query, activeThemeUrl, undefined, { refresh: true })}
+                  activeOpacity={0.85}
+                >
+                  <Text style={s.retryT}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {loading && show.length === 0 && (
+              <View style={s.center}>
+                <ActivityIndicator size="large" color={COLORS.secondary} />
+                <Text style={s.muted}>Loading all packages…</Text>
+              </View>
+            )}
+          </>
+        }
+        ListEmptyComponent={
+          !loading && !apiError && hasApi ? (
+            <View style={s.center}>
+              <Text style={s.muted}>No packages found{query ? ` for "${query}"` : ''}.</Text>
+            </View>
+          ) : null
+        }
+        ListFooterComponent={<TabGap />}
+        contentContainerStyle={{ paddingBottom: 0 }}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={6}
+        maxToRenderPerBatch={8}
+        windowSize={9}
+      />
     </SafeAreaView>
   );
 }

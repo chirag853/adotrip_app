@@ -202,20 +202,45 @@ function extractList(json) {
 
 // Top filter chips: GET /api/v1/subthemes (NO Cookie needed — plain fetch
 // returns 200; never hardcode XSRF-TOKEN/adotrip_session, it expires).
-// Returns [{ id, name, slug, total_count, ... }]. Retries via proxy on SSL
-// errors, same as packages. Falls back to [] so the screen keeps static chips.
+// Returns [{ id, name, slug, total_count, ... }]. Uses the configured proxy
+// first (same as packages) and falls back to direct HTTPS.
 export async function fetchSubthemes({ signal, timeoutMs = 20000 } = {}) {
   const params = new URLSearchParams({ subthemes: '1' });
+  const candidates = resolveProxyCandidates();
+  const preferProxy = Boolean(resolveProxyUrl()) && candidates.length > 0;
+  const fetchDirect = () => getSubthemes(SUBTHEMES_URL, signal, timeoutMs);
+  const fetchViaProxy = (proxy) =>
+    getSubthemes(`${proxy}?${params.toString()}`, signal, proxyTimeoutMs(timeoutMs));
+
+  if (preferProxy) {
+    let proxyErr;
+    for (const proxy of candidates) {
+      try {
+        return await fetchViaProxy(proxy);
+      } catch (pe) {
+        if (pe?.name === 'AbortError') throw pe;
+        proxyErr = pe;
+      }
+    }
+
+    try {
+      return await fetchDirect();
+    } catch (directErr) {
+      if (directErr?.name === 'AbortError') throw directErr;
+      if (proxyErr) directErr.cause = `${proxyErr.message} | direct: ${directErr.message}`;
+      throw directErr;
+    }
+  }
+
   try {
-    return await getSubthemes(SUBTHEMES_URL, signal, timeoutMs);
+    return await fetchDirect();
   } catch (e) {
     if (e?.name === 'AbortError') throw e;
-    if (e?.code === 'SSL_VERIFY_FAILED' || e?.code === 'OFFLINE' || e?.code === 'TIMEOUT') {
-      const candidates = resolveProxyCandidates();
+    if (isRecoverableError(e)) {
       let lastErr = e;
       for (const proxy of candidates) {
         try {
-          return await getSubthemes(`${proxy}?${params.toString()}`, signal, timeoutMs);
+          return await fetchViaProxy(proxy);
         } catch (pe) {
           if (pe?.name === 'AbortError') throw pe;
           lastErr = pe;
@@ -290,51 +315,184 @@ async function getSubthemes(url, signal, timeoutMs) {
 // NOTE: Never add an SSL bypass (trust-all / rejectUnauthorized:false) here —
 // Play Store policy + MITM risk. The cert chain must be fixed on the server (fullchain).
 // If direct HTTPS fails with SSL_VERIFY_FAILED and a proxy is configured
-// (EXPO_PUBLIC_PACKAGES_PROXY_URL), we retry via the proxy. When both fail,
-// the Holidays screen falls back to bundled PACKAGES so the UI never goes blank.
-export async function fetchPackages({ search = '', perPage = 10, signal, timeoutMs = 20000 } = {}) {
-  const q = String(search || '').trim();
-  const base = resolveBaseUrl();
-  const pp = Math.min(50, Math.max(1, parseInt(perPage, 10) || 10));
-  const params = new URLSearchParams({ per_page: String(pp) });
-  if (q) params.set('search', q);
-  const url = `${base}?${params.toString()}`;
+// (EXPO_PUBLIC_PACKAGES_PROXY_URL), we retry via the proxy. When a proxy is
+// explicitly configured we try it first: Android's direct TLS handshake to
+// the upstream host can hang for the full timeout even though the proxy is up.
+function isRecoverableError(e) {
+  return e?.code === 'SSL_VERIFY_FAILED' || e?.code === 'OFFLINE' || e?.code === 'TIMEOUT';
+}
 
-  const locFallback = q ? q.charAt(0).toUpperCase() + q.slice(1) : 'India';
+function proxyTimeoutMs(timeoutMs) {
+  return Math.min(Number(timeoutMs) || 20000, 8000);
+}
+
+// Theme URLs come from the API without pagination params. Add them without
+// disturbing any query string the backend may already have.
+function withPageParams(url, page, perPage) {
+  const sep = String(url).includes('?') ? '&' : '?';
+  return `${url}${sep}per_page=${encodeURIComponent(perPage)}&page=${encodeURIComponent(page)}`;
+}
+
+function packageKey(p) {
+  return String(p?.id ?? p?.slug ?? p?.title ?? '');
+}
+
+async function readPageViaProxy({
+  proxy,
+  proxyUrlFor,
+  signal,
+  timeoutMs,
+  locFallback = 'India',
+}) {
+  const page = await getJsonPage(
+    proxyUrlFor(proxy),
+    signal,
+    proxyTimeoutMs(timeoutMs),
+    locFallback
+  );
+  // JSON came via proxy -> images must also go via proxy, else Android
+  // Image fails on the same broken certificate chain.
+  return {
+    ...page,
+    items: page.items.map((p) => ({
+      ...p,
+      image: proxiedImageUrl(proxy, p.imageDirect || p.image),
+    })),
+  };
+}
+
+async function fetchPageWithProxyFallback({
+  directUrl,
+  proxyUrlFor,
+  signal,
+  timeoutMs,
+  locFallback = 'India',
+}) {
+  const candidates = resolveProxyCandidates();
+  const preferProxy = Boolean(resolveProxyUrl()) && candidates.length > 0;
+  const fetchDirect = () => getJsonPage(directUrl, signal, timeoutMs, locFallback);
+
+  if (preferProxy) {
+    let proxyErr;
+    for (const proxy of candidates) {
+      try {
+        return await readPageViaProxy({
+          proxy,
+          proxyUrlFor,
+          signal,
+          timeoutMs,
+          locFallback,
+        });
+      } catch (pe) {
+        if (pe?.name === 'AbortError') throw pe;
+        proxyErr = pe;
+        // Try the next proxy candidate (e.g. local proxy not running).
+      }
+    }
+
+    try {
+      return await fetchDirect();
+    } catch (directErr) {
+      if (directErr?.name === 'AbortError') throw directErr;
+      if (proxyErr) {
+        directErr.cause = `${proxyErr.message} | direct: ${directErr.message}`;
+      }
+      throw directErr;
+    }
+  }
+
   try {
-    return await getJson(url, signal, timeoutMs, locFallback);
+    return await fetchDirect();
   } catch (e) {
     if (e?.name === 'AbortError') throw e;
-    // Direct host has a broken cert (SSL_VERIFY_FAILED) — retry via proxy
-    // candidates. Env proxy first (cloud, works for production builds),
-    // then local dev proxy (`npm run proxy`, no deploy needed).
-    // When both fail, the Holidays screen falls back to bundled PACKAGES.
-    if (e?.code === 'SSL_VERIFY_FAILED' || e?.code === 'OFFLINE' || e?.code === 'TIMEOUT') {
-      const candidates = resolveProxyCandidates();
-      let lastErr = e;
-      for (const proxy of candidates) {
-        const proxyUrl = `${proxy}?${params.toString()}`;
-        try {
-          const list = await getJson(proxyUrl, signal, timeoutMs, locFallback);
-          // JSON came via proxy -> images must also go via proxy,
-          // else Android Image fails on the same broken cert.
-          return list.map((p) => ({ ...p, image: proxiedImageUrl(proxy, p.imageDirect || p.image) }));
-        } catch (pe) {
-          if (pe?.name === 'AbortError') throw pe;
-          lastErr = pe;
-          lastErr.cause = `${e.message} | proxy ${proxy}: ${pe.message}`;
-          // Try next candidate (e.g. local proxy not running -> try next).
-        }
+    if (!isRecoverableError(e)) throw e;
+
+    let lastErr = e;
+    for (const proxy of candidates) {
+      try {
+        return await readPageViaProxy({
+          proxy,
+          proxyUrlFor,
+          signal,
+          timeoutMs,
+          locFallback,
+        });
+      } catch (pe) {
+        if (pe?.name === 'AbortError') throw pe;
+        lastErr = pe;
+        lastErr.cause = `${e.message} | proxy ${proxy}: ${pe.message}`;
       }
-      throw lastErr;
     }
-    throw e;
+    throw lastErr;
   }
+}
+
+async function collectPages({ firstPage, fetchPage }) {
+  const items = [];
+  const seen = new Set();
+
+  const append = (page) => {
+    const list = Array.isArray(page?.items) ? page.items : [];
+    for (const item of list) {
+      const key = packageKey(item);
+      if (!key || !seen.has(key)) {
+        if (key) seen.add(key);
+        items.push(item);
+      }
+    }
+  };
+
+  append(firstPage);
+
+  const currentPage = Math.max(1, Number(firstPage?.pagination?.currentPage) || 1);
+  let lastPage = Math.max(currentPage, Number(firstPage?.pagination?.lastPage) || currentPage);
+
+  for (let page = currentPage + 1; page <= lastPage; page += 1) {
+    const next = await fetchPage(page);
+    append(next);
+    const nextLast = Number(next?.pagination?.lastPage) || page;
+    if (nextLast > lastPage) lastPage = nextLast;
+  }
+  return items;
+}
+
+// Full list: /api/v1/packages is paginated. Fetch page 1, read `last_page`,
+// then fetch every remaining page and merge. The API currently accepts
+// per_page=200, so the 104 packages usually arrive in a single request.
+export async function fetchPackages({ search = '', perPage = 200, signal, timeoutMs = 20000 } = {}) {
+  const q = String(search || '').trim();
+  const base = resolveBaseUrl();
+  const pp = Math.min(200, Math.max(1, parseInt(perPage, 10) || 200));
+  const locFallback = q ? q.charAt(0).toUpperCase() + q.slice(1) : 'India';
+
+  const paramsForPage = (page) => {
+    const params = new URLSearchParams({ per_page: String(pp), page: String(page) });
+    if (q) params.set('search', q);
+    return params;
+  };
+
+  const fetchPage = (page) =>
+    fetchPageWithProxyFallback({
+      directUrl: `${base}?${paramsForPage(page).toString()}`,
+      proxyUrlFor: (proxy) => `${proxy}?${paramsForPage(page).toString()}`,
+      signal,
+      timeoutMs,
+      locFallback,
+    });
+
+  const firstPage = await fetchPage(1);
+  return collectPages({ firstPage, fetchPage });
 }
 
 // Theme chip endpoint: fetch the exact `packages_url` returned by
 // GET /api/v1/subthemes (e.g. /api/v1/holidays/beach-theme-tours-packages/packages).
-export async function fetchPackagesByUrl({ url, signal, timeoutMs = 20000 } = {}) {
+// These endpoints are paginated too, so fetch every page.
+export async function fetchPackagesByUrl({
+  url,
+  signal,
+  timeoutMs = 20000,
+  perPage = 200,
+} = {}) {
   const target = toAbsoluteUrl(url);
   if (!target) {
     const err = new Error('This theme has no packages URL.');
@@ -342,35 +500,23 @@ export async function fetchPackagesByUrl({ url, signal, timeoutMs = 20000 } = {}
     throw err;
   }
 
-  try {
-    return await getJson(target, signal, timeoutMs);
-  } catch (e) {
-    if (e?.name === 'AbortError') throw e;
-    if (e?.code === 'SSL_VERIFY_FAILED' || e?.code === 'OFFLINE' || e?.code === 'TIMEOUT') {
-      const candidates = resolveProxyCandidates();
-      let lastErr = e;
-      for (const proxy of candidates) {
-        const proxyUrl = `${proxy}?packages_url=${encodeURIComponent(target)}`;
-        try {
-          const list = await getJson(proxyUrl, signal, timeoutMs);
-          return list.map((p) => ({
-            ...p,
-            image: proxiedImageUrl(proxy, p.imageDirect || p.image),
-          }));
-        } catch (pe) {
-          if (pe?.name === 'AbortError') throw pe;
-          lastErr = pe;
-          lastErr.cause = `${e.message} | proxy ${proxy}: ${pe.message}`;
-        }
-      }
-      throw lastErr;
-    }
-    throw e;
-  }
+  const pp = Math.min(200, Math.max(1, parseInt(perPage, 10) || 200));
+  const fetchPage = (page) => {
+    const directUrl = withPageParams(target, page, pp);
+    return fetchPageWithProxyFallback({
+      directUrl,
+      proxyUrlFor: (proxy) =>
+        `${proxy}?packages_url=${encodeURIComponent(withPageParams(target, page, pp))}`,
+      signal,
+      timeoutMs,
+    });
+  };
+
+  const firstPage = await fetchPage(1);
+  return collectPages({ firstPage, fetchPage });
 }
 
-async function getJson(url, signal, timeoutMs, locFallback = 'India') {
-
+async function getJsonPage(url, signal, timeoutMs, locFallback = 'India') {
   // Caller AbortController (screen unmount) + own timeout — combine both
   const ctrl = new AbortController();
   let timedOut = false;
@@ -406,7 +552,7 @@ async function getJson(url, signal, timeoutMs, locFallback = 'India') {
   if (!res.ok) {
     const err = new Error(
       res.status >= 500
-        ? `Server busy (${res.status}). Showing popular packages — tap Retry to reload live deals.`
+        ? `Server busy (${res.status}). Tap Retry to reload.`
         : `Packages API failed (${res.status})`
     );
     err.code = res.status >= 500 ? 'SERVER' : 'HTTP';
@@ -422,8 +568,20 @@ async function getJson(url, signal, timeoutMs, locFallback = 'India') {
     err.cause = String(e?.message || e);
     throw err;
   }
+
   const list = extractList(json);
-  return list.map((x, i) => normalizePackage(x, i, locFallback));
+  const pagination =
+    json?.data?.pagination ?? json?.pagination ?? json?.meta?.pagination ?? null;
+
+  return {
+    items: list.map((x, i) => normalizePackage(x, i, locFallback)),
+    pagination: {
+      currentPage: Math.max(1, Number(pagination?.current_page) || 1),
+      lastPage: Math.max(1, Number(pagination?.last_page) || 1),
+      total: Number(pagination?.total) || list.length,
+      perPage: Number(pagination?.per_page) || list.length,
+    },
+  };
 }
 
 // ---------- Package detail (proxy: <proxy>?detail=<slug>) ----------

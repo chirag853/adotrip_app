@@ -80,6 +80,15 @@ function holidayPageDetail(slug, res) {
 }
 
 function send(res, status, body, contentType) {
+  // Client may abort an image request while its headers are already streaming
+  // (or upstream may fail mid-stream). Never try to write a second response —
+  // an uncaught ERR_HTTP_HEADERS_SENT would kill the whole proxy.
+  if (res.headersSent) {
+    try {
+      res.destroy();
+    } catch {}
+    return;
+  }
   res.writeHead(status, {
     'Content-Type': contentType || 'application/json',
     'Cache-Control': 'no-store', // hamesha live data — koi caching nahi
@@ -132,6 +141,11 @@ const server = http.createServer((req, res) => {
           'Content-Type': ires.headers['content-type'] || 'image/jpeg',
           'Cache-Control': 'public, max-age=3600', // photo 1 ghanta cache (roz nahi badalti)
           'Access-Control-Allow-Origin': '*',
+        });
+        ires.on('error', () => {
+          try {
+            res.destroy();
+          } catch {}
         });
         ires.pipe(res);
       }
@@ -242,11 +256,13 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const perPage = Math.min(50, Math.max(1, parseInt(q.get('per_page'), 10) || 10));
+  const perPage = Math.min(200, Math.max(1, parseInt(q.get('per_page'), 10) || 10));
+  const page = Math.max(1, parseInt(q.get('page'), 10) || 1);
   const search = String(q.get('search') || '').slice(0, 60);
 
   const upstream = new URL(UPSTREAM);
   upstream.searchParams.set('per_page', String(perPage));
+  upstream.searchParams.set('page', String(page));
   if (search) upstream.searchParams.set('search', search);
 
   const ureq = https.get(
