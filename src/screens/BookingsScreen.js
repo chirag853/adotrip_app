@@ -1,6 +1,5 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../theme';
 import { ScreenHeader, TabGap } from '../components/UI';
 
@@ -13,7 +12,7 @@ const DEMO = [
 export default function BookingsScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <ScreenHeader title="🧳 My Bookings" right={<TouchableOpacity onPress={() => navigation.navigate('Support')}><Ionicons name="help-circle-outline" size={22} color="#fff" /></TouchableOpacity>} />
+      <ScreenHeader title="Bookings" />
       <ScrollView style={{ padding: 16 }}>
         {DEMO.map((b) => (
           <View key={b.id} style={s.card}>

@@ -10,10 +10,11 @@ import {
   Dimensions,
   Modal,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW, SHADOW_LG } from '../theme';
 import { Rating, PrimaryBtn } from '../components/UI';
+import AppHeader from '../components/AppHeader';
 import { fetchPackageDetail } from '../utils/packagesApi';
 
 const W = Dimensions.get('window').width;
@@ -26,6 +27,11 @@ const TABS = [
   { id: 'terms', label: 'Terms' },
   { id: 'similar', label: 'Similar' },
 ];
+
+// Bundled assets come through as numbers, remote API images as strings.
+function imageSource(value) {
+  return typeof value === 'string' ? { uri: value } : value;
+}
 
 function Gallery({ images, title }) {
   const [idx, setIdx] = useState(0);
@@ -57,7 +63,7 @@ function Gallery({ images, title }) {
           ) : (
             <Image
               key={i}
-              source={{ uri: u }}
+              source={imageSource(u)}
               style={[s.hero, { width: W }]}
               resizeMode="cover"
               onError={() => setErrs((p) => ({ ...p, [i]: true }))}
@@ -91,7 +97,7 @@ function Gallery({ images, title }) {
                 </View>
               ) : (
                 <Image
-                  source={{ uri: u }}
+                  source={imageSource(u)}
                   style={s.thumbImg}
                   resizeMode="cover"
                   onError={() => setErrs((p) => ({ ...p, [i]: true }))}
@@ -176,7 +182,6 @@ export default function HolidayDetailScreen({ navigation, route }) {
   const scrollRef = useRef(null);
   const yMap = useRef({});
   const baseY = useRef(0);
-  const insets = useSafeAreaInsets();
 
   const load = useCallback(
     async (signal) => {
@@ -286,15 +291,10 @@ export default function HolidayDetailScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <View style={s.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.back} hitSlop={10}>
-          <Ionicons name="arrow-back" size={20} color="#fff" />
-        </TouchableOpacity>
-        <Text style={s.topT} numberOfLines={1}>
-          {d?.title || 'Holiday Package'}
-        </Text>
-        <View style={{ width: 34 }} />
-      </View>
+      <AppHeader
+        title={d?.title || 'Holiday Package'}
+        onBack={() => navigation.goBack()}
+      />
 
       {loading && !d && (
         <View style={s.center}>
@@ -526,7 +526,7 @@ export default function HolidayDetailScreen({ navigation, route }) {
             </View>
           </ScrollView>
 
-          <View style={[s.bookBar, { paddingBottom: Math.max(12, insets.bottom + 4) }]}>
+          <View style={[s.bookBar, { paddingBottom: 12 }]}>
             <View style={s.bookPriceWrap}>
               <Text style={s.bookPrice}>{inr(d.price)}</Text>
               <Text style={s.bookSub}>per person • Pay 25% to book</Text>
@@ -641,9 +641,6 @@ export default function HolidayDetailScreen({ navigation, route }) {
 }
 
 const s = StyleSheet.create({
-  topBar: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', padding: 12 },
-  back: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' },
-  topT: { flex: 1, color: '#fff', fontWeight: '900', fontSize: 15, marginHorizontal: 10 },
   hero: { height: 260 },
   count: { position: 'absolute', top: 12, right: 12, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
   countT: { color: '#fff', fontSize: 12, fontWeight: '700' },

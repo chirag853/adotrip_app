@@ -2,6 +2,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme';
+import AppHeader from '../components/AppHeader';
 import { TabGap } from '../components/UI';
 
 const ITEMS = [
@@ -17,6 +18,7 @@ const ITEMS = [
 export default function AccountScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
+      <AppHeader />
       <View style={s.hero}>
         <View style={s.av}><Text style={{ fontSize: 34 }}>🧳</Text></View>
         <Text style={s.name}>Hello, Traveller 👋</Text>

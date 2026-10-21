@@ -122,7 +122,7 @@ export default function HolidaysScreen({ navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
       <ScreenHeader
-        title="🏖️ Holiday Packages"
+        title="Holidays"
         onBack={() => {
           try {
             navigation.goBack();
@@ -130,7 +130,7 @@ export default function HolidaysScreen({ navigation }) {
         }}
         right={
           <TouchableOpacity onPress={() => navigation.navigate('Circuit')}>
-            <Ionicons name="sparkles-outline" size={22} color="#FEE400" />
+            <Ionicons name="sparkles-outline" size={22} color={COLORS.secondary} />
           </TouchableOpacity>
         }
       />

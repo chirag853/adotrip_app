@@ -9,7 +9,7 @@ export default function FlightResultsScreen({ navigation, route }) {
   const { from = 'Delhi', to = 'Mumbai', date = '12 Oct 2026' } = route.params || {};
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <ScreenHeader title={`${from} → ${to}`} subtitle={`${date} • 2 Travellers • Economy`} onBack={() => navigation.goBack()} right={<Ionicons name="filter-outline" size={22} color="#fff" />} />
+      <ScreenHeader title={`${from} → ${to}`} subtitle={`${date} • 2 Travellers • Economy`} onBack={() => navigation.goBack()} right={<Ionicons name="filter-outline" size={22} color={COLORS.secondary} />} />
       <ScrollView style={{ padding: 16 }}>
         {FLIGHT_RESULTS.map((f) => (
           <View key={f.id} style={s.card}>

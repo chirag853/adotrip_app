@@ -1,9 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
-import { COLORS, RADIUS } from '../theme';
+import AppShell from '../components/AppShell';
 import SosButton from '../components/SosButton';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -26,6 +25,7 @@ import CircuitPlannerScreen from '../screens/CircuitPlannerScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import ConfirmScreen from '../screens/ConfirmScreen';
 import AuthScreen from '../screens/AuthScreen';
+import HimachalScreen from '../screens/HimachalScreen';
 import { AboutScreen, ContactScreen, SupportScreen } from '../screens/InfoScreens';
 import ComingSoonScreen from '../screens/ComingSoonScreen';
 
@@ -36,19 +36,8 @@ function Tabs() {
   return (
     <View style={{ flex: 1 }}>
       <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarHideOnKeyboard: true,
-          tabBarActiveTintColor: COLORS.secondary,
-          tabBarInactiveTintColor: 'rgba(90,100,115,0.85)',
-          tabBarItemStyle: { borderRadius: RADIUS.button, marginHorizontal: 4, paddingVertical: 4 },
-          tabBarStyle: { position: 'absolute', bottom: 12, left: 16, right: 16, height: 68, borderRadius: RADIUS.xl, backgroundColor: '#fff', borderTopWidth: 1, borderColor: COLORS.border, paddingBottom: 8, paddingTop: 8, elevation: 8, shadowColor: COLORS.secondary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 10 },
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
-          tabBarIcon: ({ color, size }) => {
-            const map = { Home: 'home', Holidays: 'map', Offers: 'pricetags', Bookings: 'briefcase', Account: 'person' };
-            return <Ionicons name={map[route.name] || 'ellipse'} size={22} color={color} />;
-          },
-        })}
+        tabBar={() => null}
+        screenOptions={{ headerShown: false }}
       >
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Holidays" component={HolidaysScreen} />
@@ -63,7 +52,12 @@ function Tabs() {
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{ headerShown: false }}
+      screenLayout={({ children, navigation }) => (
+        <AppShell navigation={navigation}>{children}</AppShell>
+      )}
+    >
       <Stack.Screen name="Main" component={Tabs} />
       <Stack.Screen name="Flights" component={FlightsScreen} />
       <Stack.Screen name="FlightResults" component={FlightResultsScreen} />
@@ -83,16 +77,7 @@ export default function AppNavigator() {
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Contact" component={ContactScreen} />
       <Stack.Screen name="Support" component={SupportScreen} />
-      <Stack.Screen
-        name="Himachal"
-        component={ComingSoonScreen}
-        initialParams={{
-          title: 'Himachal Tourism',
-          emoji: '🏔️',
-          blurb: 'Manali se Spiti tak — Himachal ka full section (destinations, packages, hotels) jald hi aa raha hai.',
-          highlights: ['Manali', 'Shimla', 'Dharamshala', 'Kasol', 'Spiti Valley'],
-        }}
-      />
+      <Stack.Screen name="Himachal" component={HimachalScreen} />
       <Stack.Screen
         name="LuxuryTrains"
         component={ComingSoonScreen}

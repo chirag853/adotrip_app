@@ -1,19 +1,19 @@
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme';
+import AppHeader from '../components/AppHeader';
 
 export default function BlogDetailScreen({ navigation, route }) {
   const b = route.params?.item || { title: 'Travel Guide', cat: 'Guide', read: '5 min', emoji: '🌍', color: '#0284C7', desc: 'Details' };
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top']}>
+      <AppHeader title="Travel Blog" onBack={() => navigation.goBack()} />
       <View style={[s.hero, { backgroundColor: b.color }]}>
         {b.image ? (
           <Image source={{ uri: b.image }} style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]} resizeMode="cover" />
         ) : (
           <Text style={{ fontSize: 72 }}>{b.emoji}</Text>
         )}
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.back}><Ionicons name="arrow-back" size={20} color="#fff" /></TouchableOpacity>
       </View>
       <ScrollView style={{ padding: 18 }}>
         <Text style={s.cat}>{b.cat} • {b.read} • 5747 views</Text>
@@ -33,7 +33,6 @@ export default function BlogDetailScreen({ navigation, route }) {
 }
 const s = StyleSheet.create({
   hero: { height: 200, alignItems: 'center', justifyContent: 'center' },
-  back: { position: 'absolute', top: 14, left: 14, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 8 },
   cat: { color: COLORS.primaryText, fontWeight: '800', fontSize: 12 },
   title: { fontSize: 21, fontWeight: '900', color: COLORS.secondary, marginTop: 6 },
   body: { color: '#4B5563', fontSize: 14, lineHeight: 22, marginTop: 12 },

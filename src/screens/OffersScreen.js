@@ -9,7 +9,7 @@ export default function OffersScreen({ navigation }) {
   const [f, setF] = useState('All Offers');
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
-      <ScreenHeader title="🎁 Exclusive Offers" onBack={() => { try { navigation.goBack(); } catch {} }} />
+      <ScreenHeader title="Offers" onBack={() => { try { navigation.goBack(); } catch {} }} />
       <ScrollView>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ padding: 16 }}>
           {['All Offers', 'Flights', 'Hotels', 'Holiday'].map((x) => <Chip key={x} label={x} active={f === x} onPress={() => setF(x)} />)}

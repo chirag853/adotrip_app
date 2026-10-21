@@ -1,20 +1,21 @@
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../theme';
 import { Rating, PrimaryBtn } from '../components/UI';
+import AppHeader from '../components/AppHeader';
 
 export default function HotelDetailScreen({ navigation, route }) {
   const h = route.params?.item || { name: 'Hotel Savera', location: 'Goa', price: 3499, oldPrice: 5999, rating: 4.3, reviews: 2100, emoji: '🏨', color: '#0284C7', tag: 'Couple Friendly' };
+  const imageSource = typeof h.image === 'string' ? { uri: h.image } : h.image;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg }} edges={['top']}>
+      <AppHeader title="Hotel Details" onBack={() => navigation.goBack()} />
       <View style={[s.hero, { backgroundColor: h.color }]}>
-        {h.image ? (
-          <Image source={{ uri: h.image }} style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]} resizeMode="cover" />
+        {imageSource ? (
+          <Image source={imageSource} style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]} resizeMode="cover" />
         ) : (
           <Text style={{ fontSize: 72 }}>{h.emoji}</Text>
         )}
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.back}><Ionicons name="arrow-back" size={20} color="#fff" /></TouchableOpacity>
         <Text style={s.tag}>{h.tag}</Text>
       </View>
       <ScrollView style={{ padding: 16 }}>
@@ -28,7 +29,7 @@ export default function HotelDetailScreen({ navigation, route }) {
           ))}
         </View>
         <Text style={s.sec}>About this property</Text>
-        <Text style={s.desc}>Premium rooms, 24x7 room service, a multi-cuisine restaurant and a family-friendly stay. Best deal with the Adotrip price guarantee — free cancellation up to 48 hrs before check-in.</Text>
+        <Text style={s.desc}>{h.desc || 'Premium rooms, 24x7 room service, a multi-cuisine restaurant and a family-friendly stay. Best deal with the Adotrip price guarantee — free cancellation up to 48 hrs before check-in.'}</Text>
         <View style={s.priceBox}>
           <View>
             <Text style={s.price}>₹{h.price.toLocaleString('en-IN')}<Text style={s.per}> /night</Text></Text>
@@ -44,7 +45,6 @@ export default function HotelDetailScreen({ navigation, route }) {
 }
 const s = StyleSheet.create({
   hero: { height: 220, alignItems: 'center', justifyContent: 'center' },
-  back: { position: 'absolute', top: 14, left: 14, backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 8 },
   tag: { color: '#fff', backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginTop: 8, fontWeight: '700', fontSize: 12 },
   name: { fontSize: 20, fontWeight: '900', color: COLORS.secondary },
   stars: { color: '#F59E0B', fontWeight: '800', fontSize: 13, marginTop: 2 },

@@ -54,7 +54,9 @@ export default function SosButton() {
 
 const s = StyleSheet.create({
   fab: {
-    position: 'absolute', right: 16, bottom: 92,
+    // Tabs ka content global footer ke upar khatam hota hai, isliye 12px
+    // yahan = screen bottom se 92px (footer ke 12px upar).
+    position: 'absolute', right: 16, bottom: 12,
     width: 56, height: 56, borderRadius: 28,
     backgroundColor: COLORS.danger, alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: '#fff', ...SHADOW_LG,

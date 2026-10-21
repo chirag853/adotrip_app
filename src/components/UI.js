@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AppHeader from './AppHeader';
 import { COLORS, RADIUS, SHADOW, SHADOW_LG, TYPO } from '../theme';
 
 export function SectionHeader({ title, subtitle, onViewAll }) {
@@ -86,29 +87,15 @@ export function Rating({ value, reviews }) {
   );
 }
 
-// Shared navy header - sab screens me ek jaisa top bar
+// Common header — saare screens ek hi AppHeader use karte hain
 export function ScreenHeader({ title, subtitle, onBack, right }) {
-  return (
-    <View style={s.head}>
-      {onBack ? (
-        <TouchableOpacity onPress={onBack} hitSlop={10} style={s.headBack}>
-          <Ionicons name="arrow-back" size={22} color={COLORS.textOnDark} />
-        </TouchableOpacity>
-      ) : (
-        <View style={{ width: 34 }} />
-      )}
-      <View style={{ flex: 1, marginHorizontal: 10 }}>
-        <Text style={s.headT} numberOfLines={1}>{title}</Text>
-        {subtitle ? <Text style={s.headS} numberOfLines={1}>{subtitle}</Text> : null}
-      </View>
-      {right ?? <View style={{ width: 22 }} />}
-    </View>
-  );
+  return <AppHeader title={title} subtitle={subtitle} onBack={onBack} right={right} />;
 }
 
-// Gap at the end of lists so content is not hidden under the floating tab bar
+// End-of-list breathing space. AppShell already reserves space for the
+// common footer, so this only needs to be a small gap.
 export function TabGap() {
-  return <View style={{ height: 96 }} />;
+  return <View style={{ height: 16 }} />;
 }
 
 const s = StyleSheet.create({
@@ -138,8 +125,4 @@ const s = StyleSheet.create({
   btnText: { color: COLORS.onPrimary, fontSize: TYPO.lg, fontWeight: '800', letterSpacing: 0.3 },
   star: { backgroundColor: COLORS.success, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   rev: { fontSize: 11, color: COLORS.textLight, marginLeft: 6 },
-  head: { backgroundColor: COLORS.secondary, flexDirection: 'row', alignItems: 'center', padding: 16 },
-  headBack: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' },
-  headT: { color: COLORS.textOnDark, fontWeight: '900', fontSize: 17 },
-  headS: { color: COLORS.mutedOnDark, fontSize: 11, marginTop: 1 },
 });
