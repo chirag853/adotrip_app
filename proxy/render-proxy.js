@@ -252,6 +252,54 @@ async function handleAiPlan(req, res) {
   upstream.end();
 }
 
+// Destination details for the Circuit Planner accordion:
+//   <proxy>/api/destinations?city=delhi,agra
+//   <proxy>?destinations=delhi,agra (legacy shortcut)
+// Areas, nearby attractions and how-to-reach entries all come from this one
+// upstream response. The app groups them by destination and city.
+function handleDestinations(res, query) {
+  const raw = String(query || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 300);
+  const city = raw
+    .split(',')
+    .map((part) => part.trim().toLowerCase())
+    .filter(Boolean)
+    .join(',');
+  if (!city || !/^[a-z0-9 ,.'&()-]+$/.test(city)) {
+    return send(res, 400, JSON.stringify({ error: 'city is required (comma-separated)' }));
+  }
+
+  const upstream = new URL('https://www.adotrip.com/api/v1/destinations');
+  upstream.searchParams.set('city', city);
+
+  const dreq = https.get(
+    upstream,
+    {
+      agent,
+      headers: { Accept: 'application/json', 'User-Agent': 'AdotripApp-Proxy/1.0' },
+      timeout: 30000,
+    },
+    (dres) => {
+      const chunks = [];
+      dres.on('data', (c) => chunks.push(c));
+      dres.on('end', () =>
+        send(
+          res,
+          dres.statusCode || 502,
+          Buffer.concat(chunks),
+          dres.headers['content-type'] || 'application/json'
+        )
+      );
+    }
+  );
+  dreq.on('timeout', () => dreq.destroy(new Error('destinations timeout')));
+  dreq.on('error', (e) =>
+    send(res, 502, JSON.stringify({ error: 'destinations upstream failed', detail: e.message }))
+  );
+}
+
 function handleGeocode(res, query) {
   const clean = String(query || '')
     .replace(/\s+/g, ' ')
@@ -464,6 +512,12 @@ const server = http.createServer((req, res) => {
   //   <proxy>?geocode=Manali (legacy shortcut)
   if (pathname === '/api/geocode' || q.get('geocode') !== null) {
     return handleGeocode(res, q.get('q') || q.get('geocode') || '');
+  }
+
+  // Destination details for the Circuit Planner accordion:
+  //   <proxy>/api/destinations?city=delhi,agra
+  if (pathname === '/api/destinations' || q.get('destinations') !== null) {
+    return handleDestinations(res, q.get('city') || q.get('destinations') || '');
   }
 
   // HPTDC hotels: <proxy>?hptdc=1

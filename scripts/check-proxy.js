@@ -73,6 +73,15 @@ function get(url, timeoutMs = 15000) {
   line('package detail (upstream)', { ok: detOk, status: det.status },
     'Detail fail — list chal rahi to app list dikhayegi, detail me Retry aayega.');
 
+  const dst = await get(`${base}/api/destinations?city=delhi,agra`, 45000);
+  let dstOk = dst.ok;
+  try {
+    const j = JSON.parse(dst.body || '{}');
+    dstOk = dst.ok && Array.isArray(j?.data?.destinations) && j.data.destinations.length > 0;
+  } catch { dstOk = false; }
+  line('destinations (upstream)', { ok: dstOk, status: dst.status },
+    'Proxy restart karo (`npm run proxy:restart`) - destinations branch purane proxy me nahi hai.');
+
   console.log(fail === 0
     ? '\nSab OK — phir bhi phone me na khule to: same Wi-Fi? .env IP fresh? `npx expo start -c`?'
     : `\n${fail} check FAIL — upar wali line ka hint follow karo.`);

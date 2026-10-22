@@ -56,6 +56,12 @@ export default {
       return geocode(url);
     }
 
+    // Destination details for the Circuit Planner accordion:
+    //   <worker>/api/destinations?city=delhi,agra
+    if (url.pathname === '/api/destinations' || url.searchParams.get('destinations') !== null) {
+      return destinations(url);
+    }
+
     // Subthemes list: <worker>?subthemes=1
     if (url.searchParams.get('subthemes') !== null) {
       const res = await fetch('https://www.adotrip.com/api/v1/subthemes', {
@@ -325,6 +331,39 @@ async function mapTile(url) {
       ...cors(),
       'Content-Type': 'image/png',
       'Cache-Control': 'public, max-age=86400',
+    },
+  });
+}
+
+async function destinations(url) {
+  const raw = String(url.searchParams.get('city') || url.searchParams.get('destinations') || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 300);
+  const city = raw
+    .split(',')
+    .map((part) => part.trim().toLowerCase())
+    .filter(Boolean)
+    .join(',');
+  if (!city || !/^[a-z0-9 ,.'&()-]+$/.test(city)) {
+    return new Response(JSON.stringify({ error: 'city is required (comma-separated)' }), {
+      status: 400,
+      headers: { ...cors(), 'Content-Type': 'application/json' },
+    });
+  }
+
+  const upstream = new URL('https://www.adotrip.com/api/v1/destinations');
+  upstream.searchParams.set('city', city);
+  const res = await fetch(upstream.toString(), {
+    headers: { Accept: 'application/json', 'User-Agent': 'AdotripApp-Proxy/1.0' },
+  });
+  const body = await res.text();
+  return new Response(body, {
+    status: res.status,
+    headers: {
+      ...cors(),
+      'Content-Type': res.headers.get('Content-Type') || 'application/json',
+      'Cache-Control': 'no-store',
     },
   });
 }

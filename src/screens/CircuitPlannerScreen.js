@@ -4,6 +4,7 @@ import {
   Alert,
   Animated,
   Easing,
+  Image,
   View,
   Text,
   ScrollView,
@@ -21,7 +22,9 @@ import { WebView } from 'react-native-webview';
 import AppHeader from '../components/AppHeader';
 import { COLORS } from '../theme';
 import { fetchAiItinerary } from '../utils/aiPlannerApi';
+import { fetchDestinationDetails } from '../utils/destinationsApi';
 import { geocodeStops } from '../utils/geocodeApi';
+import { proxiedImageUrl } from '../utils/packagesApi';
 
 // AI Circuit Planner — Adotrip website jaisa full landing page:
 // hero -> smart itinerary generator -> how it works -> why AI -> social proof
@@ -118,6 +121,24 @@ function splitDestinationInput(value) {
     .split(/\s+to\s+|→|->/i)
     .map((part) => part.trim())
     .filter(Boolean);
+}
+
+function titleCase(value) {
+  return String(value || '').replace(/\b[a-z]/g, (c) => c.toUpperCase());
+}
+
+function joinCityNames(cities) {
+  const names = (cities || []).map(titleCase).filter(Boolean);
+  if (names.length <= 1) return names[0] || '';
+  if (names.length === 2) return `${names[0]} & ${names[1]}`;
+  return `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
+}
+
+function formatViews(value) {
+  const n = Number(value) || 0;
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
 }
 
 function escapeHtml(value) {
@@ -280,6 +301,255 @@ function SectionHead({ kicker, title, sub }) {
   );
 }
 
+function DestinationDetailsCard({
+  data,
+  cities,
+  loading,
+  error,
+  onRetry,
+  proxyBase,
+  openId,
+  onToggle,
+  onLayout,
+}) {
+  if (!loading && !data && !error) return null;
+
+  const groups = data?.groups || [];
+  const total = data?.total || 0;
+  const headerCities = data?.cities?.length ? data.cities : cities || [];
+
+  return (
+    <View style={[s.card, { marginTop: 12 }]} onLayout={onLayout}>
+      <View style={s.destHead}>
+        <View style={s.mapIcon}>
+          <Ionicons name="location" size={17} color={NAVY} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.planTag}>DESTINATIONS & ATTRACTIONS</Text>
+          <Text style={s.planTitle}>
+            {headerCities.length ? joinCityNames(headerCities) : 'Explore your destinations'}
+          </Text>
+          <Text style={s.planMeta}>
+            {data
+              ? `${total} place${total === 1 ? '' : 's'} across ${groups.length} cit${
+                  groups.length === 1 ? 'y' : 'ies'
+                }. Tap a destination for details.`
+              : 'Places, nearby attractions and how to reach.'}
+          </Text>
+        </View>
+        {loading ? <ActivityIndicator size="small" color={COLORS.primaryText} /> : null}
+      </View>
+
+      {loading ? (
+        <View style={s.destLoading}>
+          <ActivityIndicator size="small" color={COLORS.primaryText} />
+          <View style={{ flex: 1 }}>
+            <Text style={s.destLoadingTitle}>Fetching destination details...</Text>
+            <Text style={s.destLoadingSub}>Attractions, local highlights and how to reach</Text>
+          </View>
+        </View>
+      ) : null}
+
+      {error ? (
+        <View style={s.errBox}>
+          <Ionicons name="alert-circle-outline" size={16} color={COLORS.danger} />
+          <Text style={s.errT}>{error}</Text>
+          {onRetry ? (
+            <TouchableOpacity style={s.retryBtn} onPress={onRetry} activeOpacity={0.85}>
+              <Text style={s.retryT}>Retry</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      ) : null}
+
+      {!loading && data && !total ? (
+        <Text style={s.destEmpty}>
+          No destination details found for{' '}
+          {headerCities.length ? joinCityNames(headerCities) : 'these cities'}. Try a nearby city name.
+        </Text>
+      ) : null}
+
+      {!loading
+        ? groups.map((group) => (
+            <View key={group.city} style={s.destCityBlock}>
+              <View style={s.destCityRow}>
+                <Text style={s.destCity}>{group.city}</Text>
+                <Text style={s.destCityCount}>
+                  {group.destinations.length} place{group.destinations.length === 1 ? '' : 's'}
+                </Text>
+              </View>
+
+              {group.destinations.map((dest) => {
+                const open = openId === dest.id;
+                const gallery = (dest.gallery || []).filter((uri) => uri !== dest.image);
+                return (
+                  <View key={dest.id} style={[s.destItem, open && s.destItemOpen]}>
+                    <TouchableOpacity
+                      style={s.destRow}
+                      onPress={() => onToggle(open ? null : dest.id)}
+                      activeOpacity={0.85}
+                    >
+                      {dest.image ? (
+                        <Image
+                          source={{ uri: proxiedImageUrl(proxyBase, dest.image) }}
+                          style={s.destThumb}
+                        />
+                      ) : (
+                        <View style={[s.destThumb, s.destThumbEmpty]}>
+                          <Ionicons name="image-outline" size={18} color="#A0AABD" />
+                        </View>
+                      )}
+
+                      <View style={{ flex: 1 }}>
+                        <View style={s.destNameRow}>
+                          <Text style={s.destName} numberOfLines={1}>
+                            {dest.name}
+                          </Text>
+                          {dest.trending ? (
+                            <View style={s.destTrend}>
+                              <Text style={s.destTrendT}>TRENDING</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                        <Text style={s.destSub} numberOfLines={1}>
+                          {[dest.city, dest.state].filter(Boolean).join(', ')}
+                        </Text>
+                        <Text style={s.destCount}>
+                          {dest.attractions?.length
+                            ? `${dest.attractions.length} nearby attraction${
+                                dest.attractions.length > 1 ? 's' : ''
+                              }`
+                            : 'Destination details'}
+                        </Text>
+                      </View>
+
+                      <View style={[s.destChevron, open && s.destChevronOpen]}>
+                        <Ionicons
+                          name={open ? 'chevron-up' : 'chevron-down'}
+                          size={14}
+                          color={NAVY}
+                        />
+                      </View>
+                    </TouchableOpacity>
+
+                    {open ? (
+                      <View style={s.destBody}>
+                        {dest.image ? (
+                          <Image
+                            source={{ uri: proxiedImageUrl(proxyBase, dest.image) }}
+                            style={s.destHero}
+                          />
+                        ) : null}
+
+                        <Text style={s.destDesc}>
+                          {dest.description || 'No description available for this destination yet.'}
+                        </Text>
+
+                        {dest.days || dest.views ? (
+                          <View style={s.destMetaRow}>
+                            {dest.days ? (
+                              <View style={s.destMetaChip}>
+                                <Ionicons name="time-outline" size={11} color={NAVY} />
+                                <Text style={s.destMetaChipT}>
+                                  {dest.days} day{dest.days > 1 ? 's' : ''} suggested
+                                </Text>
+                              </View>
+                            ) : null}
+                            {dest.views ? (
+                              <View style={s.destMetaChip}>
+                                <Ionicons name="eye-outline" size={11} color={NAVY} />
+                                <Text style={s.destMetaChipT}>
+                                  {formatViews(dest.views)} views
+                                </Text>
+                              </View>
+                            ) : null}
+                          </View>
+                        ) : null}
+
+                        {gallery.length ? (
+                          <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={s.destGallery}
+                          >
+                            {gallery.slice(0, 5).map((uri, index) => (
+                              <Image
+                                key={`${dest.id}-gallery-${index}`}
+                                source={{ uri: proxiedImageUrl(proxyBase, uri) }}
+                                style={s.destGalleryImg}
+                              />
+                            ))}
+                          </ScrollView>
+                        ) : null}
+
+                        {dest.attractions?.length ? (
+                          <View style={s.destSection}>
+                            <Text style={s.destSectionTitle}>Nearby attractions</Text>
+                            {dest.attractions.map((attraction) => (
+                              <View key={attraction.id} style={s.attrRow}>
+                                {attraction.image ? (
+                                  <Image
+                                    source={{
+                                      uri: proxiedImageUrl(proxyBase, attraction.image),
+                                    }}
+                                    style={s.attrThumb}
+                                  />
+                                ) : (
+                                  <View style={[s.attrThumb, s.attrThumbEmpty]}>
+                                    <Ionicons
+                                      name="location-outline"
+                                      size={16}
+                                      color="#A0AABD"
+                                    />
+                                  </View>
+                                )}
+                                <View style={{ flex: 1 }}>
+                                  <Text style={s.attrName}>{attraction.title}</Text>
+                                  {attraction.meta ? (
+                                    <Text style={s.attrMeta}>{attraction.meta}</Text>
+                                  ) : null}
+                                  {attraction.description ? (
+                                    <Text style={s.attrDesc}>{attraction.description}</Text>
+                                  ) : null}
+                                </View>
+                              </View>
+                            ))}
+                          </View>
+                        ) : null}
+
+                        {dest.reach?.length ? (
+                          <View style={s.destSection}>
+                            <Text style={s.destSectionTitle}>How to reach</Text>
+                            {dest.reach.map((reach) => (
+                              <View key={reach.id} style={s.reachRow}>
+                                <Text style={s.reachTitle}>{reach.title}</Text>
+                                {reach.description ? (
+                                  <Text style={s.reachDesc}>{reach.description}</Text>
+                                ) : null}
+                                {reach.highlights.map((highlight, index) => (
+                                  <Text
+                                    key={`${reach.id}-highlight-${index}`}
+                                    style={s.reachHighlight}
+                                  >
+                                    {`\u2022 ${highlight}`}
+                                  </Text>
+                                ))}
+                              </View>
+                            ))}
+                          </View>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+          ))
+        : null}
+    </View>
+  );
+}
+
 export default function CircuitPlannerScreen({ navigation }) {
   const [to, setTo] = useState('');
   const [extraDests, setExtraDests] = useState([]);
@@ -290,6 +560,10 @@ export default function CircuitPlannerScreen({ navigation }) {
   const [plan, setPlan] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [planError, setPlanError] = useState('');
+  const [destinationData, setDestinationData] = useState(null);
+  const [destinationsLoading, setDestinationsLoading] = useState(false);
+  const [destinationsError, setDestinationsError] = useState('');
+  const [openDestinationId, setOpenDestinationId] = useState(null);
   const [mapStops, setMapStops] = useState([]);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapError, setMapError] = useState('');
@@ -300,8 +574,17 @@ export default function CircuitPlannerScreen({ navigation }) {
   const formY = useRef(0);
   const howY = useRef(0);
   const planY = useRef(0);
+  const destinationsY = useRef(0);
+  const destinationsAbort = useRef(null);
   const aiPulse = useRef(new Animated.Value(0)).current;
   const aiShimmer = useRef(new Animated.Value(0)).current;
+
+  useEffect(
+    () => () => {
+      destinationsAbort.current?.abort();
+    },
+    []
+  );
 
   const proxyBase = useMemo(
     () =>
@@ -443,6 +726,53 @@ export default function CircuitPlannerScreen({ navigation }) {
     scrollRef.current?.scrollTo({ y: Math.max(0, ref.current - 12), animated: true });
   };
 
+  // Destination details are independent of the AI itinerary, so this request
+  // starts at the same time as the AI one and can render while AI is still
+  // thinking. A new Generate click aborts the previous request.
+  const loadDestinations = async () => {
+    if (!selectedStops.length) return false;
+
+    destinationsAbort.current?.abort();
+    const ctrl = new AbortController();
+    destinationsAbort.current = ctrl;
+
+    setDestinationsLoading(true);
+    setDestinationsError('');
+    setDestinationData(null);
+    setOpenDestinationId(null);
+
+    try {
+      const data = await fetchDestinationDetails(selectedStops, { signal: ctrl.signal });
+      if (ctrl.signal.aborted) return false;
+      setDestinationData(data);
+
+      // Open a destination that actually has nearby attractions/reach details
+      // by default; a few entries in the API have only a description.
+      const allDestinations = [];
+      for (const group of data.groups || []) {
+        for (const dest of group.destinations || []) allDestinations.push(dest);
+      }
+      const firstWithDetails = allDestinations.find(
+        (dest) => dest.attractions?.length || dest.reach?.length
+      );
+      const first = firstWithDetails || allDestinations[0];
+      setOpenDestinationId(first?.id ?? null);
+
+      if (data.total) {
+        setTimeout(() => {
+          if (destinationsY.current > 0) scrollTo(destinationsY);
+        }, 350);
+      }
+      return data.total > 0;
+    } catch (e) {
+      if (e?.name === 'AbortError' || ctrl.signal.aborted) return false;
+      setDestinationsError(e?.message || 'Could not load destination details.');
+      return false;
+    } finally {
+      if (!ctrl.signal.aborted) setDestinationsLoading(false);
+    }
+  };
+
   const pickDate = (d) => {
     if (dateField === 'start') {
       setStartDate(d);
@@ -476,6 +806,12 @@ export default function CircuitPlannerScreen({ navigation }) {
 
     setGenerating(true);
     setPlanError('');
+
+    // Both requests run in parallel. The destinations API is usually much
+    // faster and paints the accordion while the AI itinerary is still loading.
+    const destinationsOkPromise = loadDestinations();
+    let aiOk = false;
+
     try {
       const itinerary = await fetchAiItinerary({
         route: selectedStops.join(' to '),
@@ -485,11 +821,17 @@ export default function CircuitPlannerScreen({ navigation }) {
         endDate: endDate ? fmtDate(endDate) : '',
       });
       setPlan(itinerary);
-      setTimeout(() => scrollTo(planY), 300);
+      aiOk = true;
     } catch (e) {
       setPlanError(e?.message || 'Could not generate your itinerary. Please try again.');
     } finally {
       setGenerating(false);
+    }
+
+    const destinationsOk = await destinationsOkPromise;
+    if (aiOk && !destinationsOk) {
+      // No accordion to land on, so keep the old behaviour and show the plan.
+      setTimeout(() => scrollTo(planY), 300);
     }
   };
 
@@ -849,6 +1191,21 @@ export default function CircuitPlannerScreen({ navigation }) {
               <Text style={s.mapNote}>Could not locate: {missingStops.join(', ')}</Text>
             ) : null}
           </View>
+
+          {/* Destination details accordion (Adotrip destinations API) */}
+          <DestinationDetailsCard
+            data={destinationData}
+            cities={selectedStops}
+            loading={destinationsLoading}
+            error={destinationsError}
+            onRetry={loadDestinations}
+            proxyBase={proxyBase}
+            openId={openDestinationId}
+            onToggle={setOpenDestinationId}
+            onLayout={(e) => {
+              destinationsY.current = e.nativeEvent.layout.y;
+            }}
+          />
 
           {/* Generated plan */}
           {plan ? (
@@ -1487,6 +1844,133 @@ const s = StyleSheet.create({
     fontWeight: '600',
   },
   mapNote: { fontSize: 9.5, lineHeight: 14, color: COLORS.danger, marginTop: 7 },
+
+  destHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  destLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F7F9FD',
+    borderWidth: 1,
+    borderColor: '#EDF1F8',
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 4,
+  },
+  destLoadingTitle: { fontSize: 11, fontWeight: '800', color: NAVY },
+  destLoadingSub: { fontSize: 9.5, lineHeight: 14, color: '#7B8799', marginTop: 2 },
+  destEmpty: { fontSize: 10.5, lineHeight: 16, color: '#6B7280', paddingVertical: 8 },
+  retryBtn: {
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryT: { fontSize: 9.5, fontWeight: '900', color: NAVY },
+  destCityBlock: { marginTop: 10 },
+  destCityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    paddingHorizontal: 2,
+  },
+  destCity: { fontSize: 11.5, fontWeight: '900', color: NAVY, letterSpacing: 0.3 },
+  destCityCount: { fontSize: 9, fontWeight: '700', color: '#8A94A6' },
+  destItem: {
+    backgroundColor: '#FBFCFE',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9EEF7',
+    marginBottom: 7,
+    overflow: 'hidden',
+  },
+  destItemOpen: { borderColor: '#F0D95A', backgroundColor: '#FFFDF4' },
+  destRow: { flexDirection: 'row', alignItems: 'center', padding: 9, gap: 9 },
+  destThumb: { width: 56, height: 56, borderRadius: 10, backgroundColor: '#E8EDF5' },
+  destThumbEmpty: { alignItems: 'center', justifyContent: 'center' },
+  destNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  destName: { flexShrink: 1, fontSize: 12, fontWeight: '900', color: NAVY },
+  destSub: { fontSize: 9.5, color: '#7B8799', marginTop: 2 },
+  destCount: { fontSize: 8.5, fontWeight: '700', color: COLORS.primaryText, marginTop: 3 },
+  destTrend: {
+    backgroundColor: '#FFE7E7',
+    borderRadius: 999,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  destTrendT: { fontSize: 6.5, fontWeight: '900', letterSpacing: 0.4, color: '#D14343' },
+  destChevron: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F1F4FA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  destChevronOpen: { backgroundColor: COLORS.primary },
+  destBody: {
+    borderTopWidth: 1,
+    borderTopColor: '#F0E8C9',
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  destHero: {
+    width: '100%',
+    height: 132,
+    borderRadius: 10,
+    backgroundColor: '#E8EDF5',
+    marginBottom: 8,
+  },
+  destDesc: { fontSize: 10.5, lineHeight: 16, color: '#4B5563' },
+  destMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  destMetaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF7D1',
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  destMetaChipT: { fontSize: 8.5, fontWeight: '800', color: '#6B5A1A' },
+  destGallery: { marginTop: 9 },
+  destGalleryImg: {
+    width: 96,
+    height: 64,
+    borderRadius: 8,
+    marginRight: 6,
+    backgroundColor: '#E8EDF5',
+  },
+  destSection: { marginTop: 12 },
+  destSectionTitle: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.7,
+    color: NAVY,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  attrRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 8 },
+  attrThumb: { width: 42, height: 42, borderRadius: 8, backgroundColor: '#E8EDF5' },
+  attrThumbEmpty: { alignItems: 'center', justifyContent: 'center' },
+  attrName: { fontSize: 10.5, fontWeight: '800', color: NAVY },
+  attrMeta: { fontSize: 8.5, color: '#8A94A6', marginTop: 1 },
+  attrDesc: { fontSize: 9.5, lineHeight: 14, color: '#5B6676', marginTop: 2 },
+  reachRow: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#EEF1F7',
+    borderRadius: 10,
+    padding: 9,
+    marginBottom: 6,
+  },
+  reachTitle: { fontSize: 10, fontWeight: '900', color: NAVY },
+  reachDesc: { fontSize: 9.5, lineHeight: 14, color: '#5B6676', marginTop: 3 },
+  reachHighlight: { fontSize: 9, lineHeight: 13.5, color: '#7B6A2A', marginTop: 3 },
 
   planTag: { fontSize: 8.5, fontWeight: '900', letterSpacing: 1, color: COLORS.primaryText },
   planTitle: { fontSize: 16, fontWeight: '900', color: NAVY, marginTop: 5 },
