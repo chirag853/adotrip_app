@@ -1,5 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Easing,
   View,
   Text,
   ScrollView,
@@ -13,8 +17,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { WebView } from 'react-native-webview';
 import AppHeader from '../components/AppHeader';
 import { COLORS } from '../theme';
+import { fetchAiItinerary } from '../utils/aiPlannerApi';
+import { geocodeStops } from '../utils/geocodeApi';
 
 // AI Circuit Planner — Adotrip website jaisa full landing page:
 // hero -> smart itinerary generator -> how it works -> why AI -> social proof
@@ -95,16 +102,6 @@ const FAQS = [
   },
 ];
 
-const DAY_ACTS = [
-  'Arrival + local market & sunset point 🌅',
-  'Main sightseeing + famous food trail 🍛',
-  'Adventure / beach / nature day 🏖️',
-  'Shopping + cultural show 🎭',
-  'Hidden gems + photography tour 📸',
-  'Day trip to nearby attraction 🚗',
-  'Leisure + departure 🛬',
-];
-
 function startOfDay(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 }
@@ -112,6 +109,161 @@ function startOfDay(d) {
 function fmtDate(d) {
   if (!d) return '';
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// "Delhi to Manali" / "Delhi → Manali" / "Delhi -> Manali" ko alag stops me
+// todo, taaki ek hi field me poori route likhne par bhi map ke saare pins aayein.
+function splitDestinationInput(value) {
+  return String(value || '')
+    .split(/\s+to\s+|→|->/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, (c) => {
+    if (c === '&') return '&amp;';
+    if (c === '<') return '&lt;';
+    if (c === '>') return '&gt;';
+    if (c === '"') return '&quot;';
+    return '&#39;';
+  });
+}
+
+// Leaflet + OpenStreetMap inside a WebView. Google Maps par Expo Go/dev build
+// me API-key/tile issues aa rahe the, isliye yeh route key-free source use
+// karta hai. The card is intentionally non-interactive (pointerEvents none) so
+// vertical page scrolling never gets stuck on the map.
+function buildRouteMapHtml(stops, proxyBase) {
+  const base = String(proxyBase || '').replace(/\/+$/, '');
+  const leafletCss = base
+    ? `${base}/api/leaflet.css`
+    : 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';
+  const leafletJs = base
+    ? `${base}/api/leaflet.js`
+    : 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
+  const tileUrl = base
+    ? `${base}/api/tile?z={z}&x={x}&y={y}`
+    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const attribution = '&copy; OpenStreetMap contributors';
+  const data = JSON.stringify(
+    (stops || []).map((stop) => ({
+      lat: Number(stop.latitude),
+      lon: Number(stop.longitude),
+      idx: Number(stop.index) + 1,
+      name: escapeHtml(stop.name || ''),
+    }))
+  ).replace(/<\//g, '<\\/');
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="${leafletCss}" />
+  <style>
+    html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; }
+    #map { position: relative; }
+    body { overflow: hidden; background: #eaf2e8; }
+    .leaflet-container { background: #eaf2e8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .stop-pin {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #FEE400; border: 2px solid #fff;
+      box-shadow: 0 2px 8px rgba(14,42,71,0.35);
+      display: flex; align-items: center; justify-content: center;
+      color: #0E2A47; font-weight: 900; font-size: 11px;
+    }
+    .leaflet-control-attribution { font-size: 9px; background: rgba(255,255,255,0.86); }
+    #map-error {
+      position: absolute; inset: 0; z-index: 999;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 20px; color: #6B7280;
+      font-size: 12px; background: #eaf2e8;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"><div id="map-error">Loading map…</div></div>
+  <script>
+    // If the proxy/Leaflet is unreachable, never leave the card stuck on
+    // "Loading map…" forever.
+    window.setTimeout(function () {
+      if (!window.__mapReady) {
+        var el = document.getElementById('map-error');
+        if (el) el.textContent = 'Map load failed. Check your internet connection.';
+      }
+    }, 8000);
+  </script>
+  <script
+    src="${leafletJs}"
+    onerror="var el=document.getElementById('map-error');if(el)el.textContent='Map load failed. Check your internet connection.';"
+  ></script>
+  <script>
+    (function () {
+      var stops = ${data};
+      var fallback = document.getElementById('map-error');
+      if (!window.L) {
+        if (fallback) fallback.textContent = 'Map load failed. Check your internet connection.';
+        return;
+      }
+      var map = L.map('map', {
+        zoomControl: false,
+        attributionControl: true,
+        dragging: false,
+        touchZoom: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        tap: false
+      });
+      // Leaflet keeps existing children inside the container; without this the
+      // fallback stays on top of the rendered map and looks like an endless
+      // "Loading map…" state.
+      if (fallback) fallback.style.display = 'none';
+      L.tileLayer('${tileUrl}', {
+        maxZoom: 19,
+        attribution: '${attribution}'
+      }).addTo(map);
+      var coords = stops.map(function (s) { return [s.lat, s.lon]; });
+      if (coords.length > 1) {
+        L.polyline(coords, { color: '#0E2A47', weight: 3, opacity: 0.9 }).addTo(map);
+      }
+      stops.forEach(function (s) {
+        var icon = L.divIcon({
+          className: 'stop-pin',
+          html: '<span>' + s.idx + '</span>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+        L.marker([s.lat, s.lon], { icon: icon }).addTo(map);
+      });
+      function fitRoute() {
+        map.invalidateSize();
+        if (coords.length > 1) {
+          map.fitBounds(coords, { padding: [34, 34], maxZoom: 11 });
+        } else if (coords.length === 1) {
+          map.setView(coords[0], 11);
+        } else {
+          map.setView([20.5937, 78.9629], 4);
+        }
+      }
+      fitRoute();
+      window.__mapReady = true;
+      setTimeout(fitRoute, 120);
+      setTimeout(fitRoute, 600);
+      setTimeout(fitRoute, 1500);
+      if (window.ResizeObserver) {
+        try {
+          new ResizeObserver(function () {
+            fitRoute();
+          }).observe(document.getElementById('map'));
+        } catch (e) {}
+      }
+    })();
+  </script>
+</body>
+</html>`;
 }
 
 function SectionHead({ kicker, title, sub }) {
@@ -136,12 +288,28 @@ export default function CircuitPlannerScreen({ navigation }) {
   const [dateField, setDateField] = useState(null); // 'start' | 'end'
   const [adults, setAdults] = useState(2);
   const [plan, setPlan] = useState(null);
+  const [generating, setGenerating] = useState(false);
+  const [planError, setPlanError] = useState('');
+  const [mapStops, setMapStops] = useState([]);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState('');
+  const [mapRenderError, setMapRenderError] = useState('');
   const [openFaq, setOpenFaq] = useState(-1);
 
   const scrollRef = useRef(null);
   const formY = useRef(0);
   const howY = useRef(0);
   const planY = useRef(0);
+  const aiPulse = useRef(new Animated.Value(0)).current;
+  const aiShimmer = useRef(new Animated.Value(0)).current;
+
+  const proxyBase = useMemo(
+    () =>
+      String(process.env.EXPO_PUBLIC_PACKAGES_PROXY_URL || '')
+        .trim()
+        .replace(/\/+$/, ''),
+    []
+  );
 
   const dates = useMemo(() => {
     const list = [];
@@ -156,6 +324,120 @@ export default function CircuitPlannerScreen({ navigation }) {
     startDate && endDate
       ? Math.max(2, Math.min(7, Math.round((startOfDay(endDate) - startOfDay(startDate)) / 86400000) + 1))
       : 4;
+
+  const selectedStops = useMemo(() => {
+    const seen = new Set();
+    const out = [];
+    for (const raw of [to, ...extraDests]) {
+      for (const stop of splitDestinationInput(raw)) {
+        const key = stop.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(stop);
+      }
+    }
+    return out;
+  }, [to, extraDests]);
+
+  // Destinations badalte hi map ke pins refresh karo. 900ms debounce se
+  // typing ke beech har letter par geocoding request nahi jaati.
+  useEffect(() => {
+    if (!selectedStops.length) {
+      setMapStops([]);
+      setMapError('');
+      setMapRenderError('');
+      setMapLoading(false);
+      return undefined;
+    }
+
+    const ctrl = new AbortController();
+    let active = true;
+    setMapStops([]);
+    setMapError('');
+    setMapRenderError('');
+    setMapLoading(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const coords = await geocodeStops(selectedStops, { signal: ctrl.signal });
+        if (!active) return;
+        setMapStops(coords);
+        setMapRenderError('');
+        if (!coords.length) {
+          setMapError('Could not locate these destinations. Try a city or region name.');
+        }
+      } catch (e) {
+        if (!active || e?.name === 'AbortError') return;
+        setMapStops([]);
+        setMapError(e?.message || 'Could not load the map. Please try again.');
+      } finally {
+        if (active) setMapLoading(false);
+      }
+    }, 900);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      ctrl.abort();
+    };
+  }, [selectedStops]);
+
+  const mapHtml = useMemo(() => buildRouteMapHtml(mapStops, proxyBase), [mapStops, proxyBase]);
+
+  // AI-style "thinking" animation while the itinerary is being generated:
+  // a pulsing sparkle orb plus a light sweep across the Generate button.
+  useEffect(() => {
+    let pulseLoop;
+    let shimmerLoop;
+    if (generating) {
+      aiPulse.setValue(0);
+      aiShimmer.setValue(0);
+      pulseLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(aiPulse, {
+            toValue: 1,
+            duration: 900,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(aiPulse, {
+            toValue: 0,
+            duration: 900,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      shimmerLoop = Animated.loop(
+        Animated.timing(aiShimmer, {
+          toValue: 1,
+          duration: 1400,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      );
+      pulseLoop.start();
+      shimmerLoop.start();
+    } else {
+      aiPulse.stopAnimation();
+      aiShimmer.stopAnimation();
+      aiPulse.setValue(0);
+      aiShimmer.setValue(0);
+    }
+    return () => {
+      pulseLoop?.stop();
+      shimmerLoop?.stop();
+    };
+  }, [generating, aiPulse, aiShimmer]);
+
+  const aiScale = aiPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] });
+  const aiGlow = aiPulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
+  const shimmerX = aiShimmer.interpolate({ inputRange: [0, 1], outputRange: [-120, 380] });
+
+  const missingStops =
+    !mapLoading && mapStops.length
+      ? selectedStops.filter((_, index) => !mapStops.some((stop) => stop.index === index))
+      : [];
 
   const scrollTo = (ref) => {
     scrollRef.current?.scrollTo({ y: Math.max(0, ref.current - 12), animated: true });
@@ -183,18 +465,36 @@ export default function CircuitPlannerScreen({ navigation }) {
     setExtraDests((list) => list.filter((_, i) => i !== index));
   };
 
-  const generate = () => {
-    const n = tripDays;
-    setPlan(
-      Array.from({ length: n }, (_, i) => ({
-        d: `Day ${i + 1}`,
-        t: DAY_ACTS[i % DAY_ACTS.length],
-      }))
-    );
-    setTimeout(() => scrollTo(planY), 250);
+  const generate = async () => {
+    if (!selectedStops.length) {
+      Alert.alert(
+        'Destination required',
+        'Please enter where you want to go, or add a destination.'
+      );
+      return;
+    }
+
+    setGenerating(true);
+    setPlanError('');
+    try {
+      const itinerary = await fetchAiItinerary({
+        route: selectedStops.join(' to '),
+        days: tripDays,
+        adults,
+        startDate: startDate ? fmtDate(startDate) : '',
+        endDate: endDate ? fmtDate(endDate) : '',
+      });
+      setPlan(itinerary);
+      setTimeout(() => scrollTo(planY), 300);
+    } catch (e) {
+      setPlanError(e?.message || 'Could not generate your itinerary. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const destinationLabel = to.trim() || 'Your Trip';
+  const extraStopCount = extraDests.filter((d) => String(d || '').trim()).length;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top']}>
@@ -369,10 +669,73 @@ export default function CircuitPlannerScreen({ navigation }) {
               </TouchableOpacity>
             )}
 
-            <TouchableOpacity style={s.generateBtn} onPress={generate} activeOpacity={0.9}>
-              <Text style={s.generateT}>Generate Now</Text>
-              <Ionicons name="arrow-forward" size={16} color={NAVY} style={{ marginLeft: 7 }} />
+            <TouchableOpacity
+              style={[s.generateBtn, generating && { opacity: 0.92 }]}
+              onPress={generate}
+              activeOpacity={0.9}
+              disabled={generating}
+            >
+              {generating ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    s.aiShimmer,
+                    { transform: [{ translateX: shimmerX }, { skewX: '-18deg' }] },
+                  ]}
+                />
+              ) : null}
+              {generating ? (
+                <ActivityIndicator size="small" color={NAVY} />
+              ) : (
+                <Ionicons name="sparkles" size={16} color={NAVY} />
+              )}
+              <Text style={[s.generateT, { marginLeft: 7 }]}>
+                {generating ? 'Generating your itinerary…' : 'Generate Now'}
+              </Text>
+              {!generating ? (
+                <Ionicons name="arrow-forward" size={16} color={NAVY} style={{ marginLeft: 7 }} />
+              ) : null}
             </TouchableOpacity>
+
+            {generating ? (
+              <View style={s.aiThinking}>
+                <Animated.View
+                  style={[s.aiOrb, { opacity: aiGlow, transform: [{ scale: aiScale }] }]}
+                >
+                  <Ionicons name="sparkles" size={18} color={NAVY} />
+                </Animated.View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.aiThinkingTitle}>AI is crafting your itinerary…</Text>
+                  <Text style={s.aiThinkingSub}>Checking routes • stays • local experiences</Text>
+                </View>
+                <View style={s.aiDots}>
+                  <Animated.View style={[s.aiDot, { opacity: aiGlow }]} />
+                  <Animated.View
+                    style={[
+                      s.aiDot,
+                      { opacity: aiPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.25] }) },
+                    ]}
+                  />
+                  <Animated.View
+                    style={[
+                      s.aiDot,
+                      { opacity: aiPulse.interpolate({ inputRange: [0, 1], outputRange: [0.25, 1] }) },
+                    ]}
+                  />
+                </View>
+              </View>
+            ) : (
+              <Text style={s.aiNote}>
+                AI itinerary powered by OpenRouter • Verify timings & prices before booking.
+              </Text>
+            )}
+
+            {planError ? (
+              <View style={s.errBox}>
+                <Ionicons name="alert-circle-outline" size={16} color={COLORS.danger} />
+                <Text style={s.errT}>{planError}</Text>
+              </View>
+            ) : null}
 
             <View style={s.trustRow}>
               <View style={[s.miniAvatar, { backgroundColor: '#FFD9B0', marginLeft: 0 }]}>
@@ -388,6 +751,105 @@ export default function CircuitPlannerScreen({ navigation }) {
             </View>
           </View>
 
+          {/* Selected destinations map */}
+          <View style={[s.card, { marginTop: 12 }]}>
+            <View style={s.mapHead}>
+              <View style={s.mapIcon}>
+                <Ionicons name="map" size={17} color={NAVY} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.mapTitle}>Your Route Map</Text>
+                <Text style={s.mapSub}>
+                  {selectedStops.length
+                    ? `${selectedStops.length} destination${selectedStops.length > 1 ? 's' : ''} selected`
+                    : 'Add destinations to see them on the map'}
+                </Text>
+              </View>
+              {mapLoading ? (
+                <ActivityIndicator size="small" color={COLORS.primaryText} />
+              ) : mapStops.length ? (
+                <View style={s.mapCount}>
+                  <Text style={s.mapCountT}>
+                    {mapStops.length}/{selectedStops.length}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+
+            {selectedStops.length ? (
+              <View style={s.stopChips}>
+                {selectedStops.map((stop, index) => (
+                  <View key={`${stop}-${index}`} style={s.stopChip}>
+                    <View style={s.stopChipNum}>
+                      <Text style={s.stopChipNumT}>{index + 1}</Text>
+                    </View>
+                    <Text style={s.stopChipT} numberOfLines={1}>
+                      {stop}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {!mapLoading && mapStops.length && !mapRenderError ? (
+              <View style={s.mapWrap}>
+                <View pointerEvents="none" style={s.map}>
+                  <WebView
+                    key={mapStops
+                      .map((stop) => `${stop.index}:${stop.latitude.toFixed(3)},${stop.longitude.toFixed(3)}`)
+                      .join('|')}
+                    source={{ html: mapHtml }}
+                    style={s.map}
+                    originWhitelist={['*']}
+                    javaScriptEnabled
+                    domStorageEnabled
+                    mixedContentMode="always"
+                    scrollEnabled={false}
+                    bounces={false}
+                    overScrollMode="never"
+                    setSupportMultipleWindows={false}
+                    onError={() =>
+                      setMapRenderError('Map load failed. Check your internet connection.')
+                    }
+                    onHttpError={() =>
+                      setMapRenderError('Map load failed. Check your internet connection.')
+                    }
+                  />
+                </View>
+              </View>
+            ) : (
+              <View style={s.mapPlaceholder}>
+                {mapLoading ? (
+                  <ActivityIndicator size="small" color={COLORS.primaryText} />
+                ) : (
+                  <Ionicons
+                    name={mapError || mapRenderError ? 'cloud-offline-outline' : 'map-outline'}
+                    size={22}
+                    color={mapError || mapRenderError ? COLORS.danger : '#9AA5B8'}
+                  />
+                )}
+                <Text
+                  style={[
+                    s.mapPlaceholderT,
+                    (mapError || mapRenderError) && { color: COLORS.danger },
+                  ]}
+                >
+                  {mapLoading
+                    ? 'Locating your destinations…'
+                    : mapError ||
+                      mapRenderError ||
+                      (selectedStops.length
+                        ? 'Map preview will appear here.'
+                        : 'Add your destinations above and they will appear on the map.')}
+                </Text>
+              </View>
+            )}
+
+            {missingStops.length ? (
+              <Text style={s.mapNote}>Could not locate: {missingStops.join(', ')}</Text>
+            ) : null}
+          </View>
+
           {/* Generated plan */}
           {plan ? (
             <View
@@ -399,23 +861,79 @@ export default function CircuitPlannerScreen({ navigation }) {
               <Text style={s.planTag}>YOUR AI ITINERARY</Text>
               <Text style={s.planTitle}>
                 {destinationLabel}
-                {extraDests.filter(Boolean).length
-                  ? ` + ${extraDests.filter(Boolean).length} stop${extraDests.filter(Boolean).length > 1 ? 's' : ''}`
+                {extraStopCount
+                  ? ` + ${extraStopCount} stop${extraStopCount > 1 ? 's' : ''}`
                   : ''}
               </Text>
               <Text style={s.planMeta}>
                 {plan.length} Days • {adults} Adult{adults > 1 ? 's' : ''}
-                {startDate ? ` • ${fmtDate(startDate)}` : ''}
+                {startDate ? ` • ${fmtDate(startDate)}${endDate ? ` → ${fmtDate(endDate)}` : ''}` : ''}
               </Text>
               <View style={{ marginTop: 10 }}>
-                {plan.map((p) => (
-                  <View key={p.d} style={s.itRow}>
+                {plan.map((p, index) => (
+                  <View key={p.id || `${p.dayLabel}-${index}`} style={s.itRow}>
                     <View style={s.itBadge}>
-                      <Text style={s.itBadgeT}>{p.d.replace('Day ', '')}</Text>
+                      <Text style={s.itBadgeT}>{p.dayNumber}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={s.itD}>{p.d}</Text>
-                      <Text style={s.itT}>{p.t}</Text>
+                      <View style={s.itTop}>
+                        <Text style={s.itD}>{p.dayLabel}</Text>
+                        {p.city ? (
+                          <Text style={s.itCity} numberOfLines={1}>
+                            {p.city}
+                          </Text>
+                        ) : null}
+                      </View>
+                      {p.title ? <Text style={s.itTitle}>{p.title}</Text> : null}
+                      {p.attraction ? (
+                        <View style={s.itAttractionRow}>
+                          <Ionicons
+                            name="location-outline"
+                            size={11}
+                            color={COLORS.primaryText}
+                          />
+                          <Text style={s.itAttraction}>{p.attraction}</Text>
+                        </View>
+                      ) : null}
+                      {p.summary ? <Text style={s.itSummary}>{p.summary}</Text> : null}
+                      <View style={s.itDetails}>
+                        {p.morning ? (
+                          <Text style={s.itDetail}>
+                            <Text style={s.itDetailLabel}>Morning: </Text>
+                            {p.morning}
+                          </Text>
+                        ) : null}
+                        {p.afternoon ? (
+                          <Text style={s.itDetail}>
+                            <Text style={s.itDetailLabel}>Afternoon: </Text>
+                            {p.afternoon}
+                          </Text>
+                        ) : null}
+                        {p.food ? (
+                          <Text style={s.itDetail}>
+                            <Text style={s.itDetailLabel}>Food: </Text>
+                            {p.food}
+                          </Text>
+                        ) : null}
+                        {p.hotel ? (
+                          <Text style={s.itDetail}>
+                            <Text style={s.itDetailLabel}>Stay: </Text>
+                            {p.hotel}
+                          </Text>
+                        ) : null}
+                        {p.transport ? (
+                          <Text style={s.itDetail}>
+                            <Text style={s.itDetailLabel}>Transport: </Text>
+                            {p.transport}
+                          </Text>
+                        ) : null}
+                        {p.duration ? (
+                          <Text style={s.itDetail}>
+                            <Text style={s.itDetailLabel}>Duration: </Text>
+                            {p.duration}
+                          </Text>
+                        ) : null}
+                      </View>
                     </View>
                   </View>
                 ))}
@@ -822,6 +1340,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
+    overflow: 'hidden',
     shadowColor: '#E0C300',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
@@ -829,6 +1348,58 @@ const s = StyleSheet.create({
     elevation: 4,
   },
   generateT: { fontSize: 14.5, fontWeight: '900', color: NAVY },
+  aiShimmer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 70,
+    borderRadius: 35,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+  aiThinking: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FFFDF0',
+    borderWidth: 1,
+    borderColor: '#F2E3A0',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    marginTop: 10,
+  },
+  aiOrb: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiThinkingTitle: { fontSize: 11.5, fontWeight: '900', color: NAVY },
+  aiThinkingSub: { fontSize: 9, lineHeight: 13, color: '#8A7B3E', marginTop: 2 },
+  aiDots: { flexDirection: 'row', gap: 4, alignItems: 'center', marginLeft: 2 },
+  aiDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: COLORS.primaryText },
+  aiNote: {
+    fontSize: 9.5,
+    lineHeight: 14,
+    color: '#8A94A6',
+    textAlign: 'center',
+    marginTop: 9,
+    paddingHorizontal: 8,
+  },
+  errBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 7,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 9,
+  },
+  errT: { flex: 1, fontSize: 10.5, lineHeight: 15, color: COLORS.danger, fontWeight: '600' },
 
   trustRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   miniAvatar: {
@@ -844,12 +1415,85 @@ const s = StyleSheet.create({
   miniAvatarT: { fontSize: 8.5, fontWeight: '900', color: NAVY },
   trustT: { fontSize: 10, fontWeight: '600', color: '#6B7280', marginLeft: 8 },
 
+  mapHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  mapIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    backgroundColor: '#FFF4B8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  mapTitle: { fontSize: 14.5, fontWeight: '900', color: NAVY },
+  mapSub: { fontSize: 10.5, color: '#8A94A6', marginTop: 2 },
+  mapCount: {
+    minWidth: 38,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#F1F5FC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  mapCountT: { fontSize: 9.5, fontWeight: '800', color: '#6B7280' },
+  stopChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+  stopChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F7F9FD',
+    borderWidth: 1,
+    borderColor: '#E6ECF7',
+    borderRadius: 999,
+    paddingLeft: 4,
+    paddingRight: 9,
+    paddingVertical: 3,
+  },
+  stopChipNum: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stopChipNumT: { fontSize: 9, fontWeight: '900', color: NAVY },
+  stopChipT: { fontSize: 10, fontWeight: '600', color: NAVY, marginLeft: 5, maxWidth: 160 },
+  mapWrap: {
+    height: 210,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E6ECF7',
+    overflow: 'hidden',
+    backgroundColor: '#EAF2E8',
+  },
+  map: { flex: 1 },
+  mapPlaceholder: {
+    height: 150,
+    borderRadius: 14,
+    backgroundColor: '#F7F9FD',
+    borderWidth: 1,
+    borderColor: '#EDF1F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 18,
+  },
+  mapPlaceholderT: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  mapNote: { fontSize: 9.5, lineHeight: 14, color: COLORS.danger, marginTop: 7 },
+
   planTag: { fontSize: 8.5, fontWeight: '900', letterSpacing: 1, color: COLORS.primaryText },
   planTitle: { fontSize: 16, fontWeight: '900', color: NAVY, marginTop: 5 },
   planMeta: { fontSize: 11, color: '#6B7280', marginTop: 3 },
   itRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: '#F7F9FD',
     borderRadius: 12,
     padding: 10,
@@ -865,10 +1509,19 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
+    marginTop: 1,
   },
   itBadgeT: { fontSize: 11, fontWeight: '900', color: NAVY },
+  itTop: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   itD: { fontSize: 11, fontWeight: '800', color: COLORS.primaryText },
-  itT: { fontSize: 12, color: COLORS.text, marginTop: 2 },
+  itCity: { flex: 1, fontSize: 9.5, color: '#8A94A6', textAlign: 'right' },
+  itTitle: { fontSize: 12.5, fontWeight: '900', color: NAVY, marginTop: 3 },
+  itAttractionRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  itAttraction: { flex: 1, fontSize: 10.5, lineHeight: 15, color: COLORS.primaryText, fontWeight: '600' },
+  itSummary: { fontSize: 10.5, lineHeight: 15.5, color: '#4B5563', marginTop: 5 },
+  itDetails: { marginTop: 6, borderTopWidth: 1, borderTopColor: '#E8EDF6', paddingTop: 6 },
+  itDetail: { fontSize: 10, lineHeight: 15, color: '#5B667A', marginBottom: 3 },
+  itDetailLabel: { fontWeight: '800', color: NAVY },
   bookBtn: {
     height: 46,
     borderRadius: 12,
