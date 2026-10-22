@@ -40,6 +40,22 @@ function get(url, timeoutMs = 15000) {
 
   line('proxy zinda (?ping=1)', await get(`${base}?ping=1`),
     '`npm run proxy:restart` chalao (proxy band hai ya port busy).');
+  const hp = await get(`${base}?hptdc=1`);
+  let hpOk = hp.ok;
+  try {
+    const j = JSON.parse(hp.body || '{}');
+    hpOk = hp.ok && Array.isArray(j?.data?.circuits) && j.data.circuits.length > 0;
+  } catch { hpOk = false; }
+  line('hptdc hotels (upstream)', { ok: hpOk, status: hp.status },
+    'Proxy restart karo (`npm run proxy:restart`) — HPTDC branch purane proxy me nahi hai.');
+  const hd = await get(`${base}?hptdc_detail=the-new-ros-common-kasauli`);
+  let hdOk = hd.ok;
+  try {
+    const j = JSON.parse(hd.body || '{}');
+    hdOk = hd.ok && !!j?.data?.slug && Array.isArray(j.data.rooms);
+  } catch { hdOk = false; }
+  line('hptdc hotel detail (upstream)', { ok: hdOk, status: hd.status },
+    'Detail branch purane proxy me nahi hai — `npm run proxy:restart` chalao.');
   const list = await get(`${base}?per_page=2`);
   let listOk = list.ok;
   try {

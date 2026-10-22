@@ -1,4 +1,4 @@
-// packages TLS proxy — zero dependencies, plain Node.js.
+// packages + HPTDC TLS proxy — zero dependencies, plain Node.js.
 // Deploy free on Render (Mumbai region): New → Web Service → this repo,
 // Start command: `node proxy/render-proxy.js`, env PORT is auto-provided.
 // Then set in the app: EXPO_PUBLIC_PACKAGES_PROXY_URL=https://<service>.onrender.com
@@ -115,6 +115,68 @@ const server = http.createServer((req, res) => {
   // proxy zinda hai ya nahi — bina API hit kiye.
   if (q.get('ping') !== null) {
     return send(res, 200, JSON.stringify({ ok: true, proxy: 'adotrip-packages', time: new Date().toISOString() }));
+  }
+
+  // HPTDC hotels: <proxy>?hptdc=1
+  // Optional filters: circuit_type, class, hotel_type, search, per_page, page.
+  // Same upstream host as packages, so the same TLS agent works.
+  if (q.get('hptdc') !== null) {
+    const upstream = new URL('https://www.adotrip.com/api/v1/hptdc');
+    const circuit = String(q.get('circuit_type') || '').slice(0, 60);
+    const cls = String(q.get('class') || '').slice(0, 30);
+    const hotelType = String(q.get('hotel_type') || '').slice(0, 60);
+    const search = String(q.get('search') || '').slice(0, 60);
+    const perPage = Math.min(100, Math.max(1, parseInt(q.get('per_page'), 10) || 100));
+    const page = Math.max(1, parseInt(q.get('page'), 10) || 1);
+    if (circuit) upstream.searchParams.set('circuit_type', circuit);
+    if (cls) upstream.searchParams.set('class', cls);
+    if (hotelType) upstream.searchParams.set('hotel_type', hotelType);
+    if (search) upstream.searchParams.set('search', search);
+    upstream.searchParams.set('per_page', String(perPage));
+    upstream.searchParams.set('page', String(page));
+
+    const hreq = https.get(
+      upstream.toString(),
+      { agent, headers: { Accept: 'application/json', 'User-Agent': 'AdotripApp-Proxy/1.0' }, timeout: 20000 },
+      (hres) => {
+        const chunks = [];
+        hres.on('data', (c) => chunks.push(c));
+        hres.on('end', () =>
+          send(res, hres.statusCode || 502, Buffer.concat(chunks), hres.headers['content-type'])
+        );
+      }
+    );
+    hreq.on('timeout', () => hreq.destroy(new Error('upstream timeout')));
+    hreq.on('error', (e) => send(res, 502, JSON.stringify({ error: 'upstream failed', detail: e.message })));
+    return;
+  }
+
+  // HPTDC hotel detail: <proxy>?hptdc_detail=<slug>
+  // Slug upstream path me jata hai, isliye strict validation.
+  if (q.get('hptdc_detail') !== null) {
+    const slug = String(q.get('hptdc_detail') || '')
+      .trim()
+      .replace(/^\/+|\/+$/g, '')
+      .slice(0, 120);
+    if (!/^[A-Za-z0-9-]+$/.test(slug)) {
+      return send(res, 400, JSON.stringify({ error: 'bad hotel slug' }));
+    }
+
+    const upstream = `https://www.adotrip.com/api/v1/hptdc/hotels/${encodeURIComponent(slug)}`;
+    const dreq = https.get(
+      upstream,
+      { agent, headers: { Accept: 'application/json', 'User-Agent': 'AdotripApp-Proxy/1.0' }, timeout: 20000 },
+      (dres) => {
+        const chunks = [];
+        dres.on('data', (c) => chunks.push(c));
+        dres.on('end', () =>
+          send(res, dres.statusCode || 502, Buffer.concat(chunks), dres.headers['content-type'])
+        );
+      }
+    );
+    dreq.on('timeout', () => dreq.destroy(new Error('upstream timeout')));
+    dreq.on('error', (e) => send(res, 502, JSON.stringify({ error: 'upstream failed', detail: e.message })));
+    return;
   }
 
   // Image proxy: <proxy>?img=https://www.adotrip.com/packages/xxx.jpg

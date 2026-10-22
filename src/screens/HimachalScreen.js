@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,15 @@ import {
   Modal,
   Pressable,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import AppHeader from '../components/AppHeader';
+import { fetchHptdcHotels } from '../utils/hptdcApi';
 
 // Adotrip x Himachal Tourism (HPTDC) — official GSA hotel page.
 // Web reference ka mobile-first design app me: hero, flagship pills, circuits,
@@ -44,176 +47,38 @@ const C = {
 
 const IMG_HERO = require('../../assets/himachal/hero.jpg');
 const IMG_MAP = require('../../assets/himachal/map.jpg');
-const HOTEL_IMGS = {
-  ros: require('../../assets/himachal/hotel-ros-common.jpg'),
-  palace: require('../../assets/himachal/hotel-palace-chail.jpg'),
-  peterhof: require('../../assets/himachal/hotel-peterhof.jpg'),
-  holiday: require('../../assets/himachal/hotel-holiday-home.jpg'),
-  golf: require('../../assets/himachal/hotel-golf-glade.jpg'),
-};
-
-const CIRCUITS = [
-  {
-    label: 'Satluj Circuit',
+const CIRCUIT_INFO = {
+  'Satluj Circuit': {
+    color: '#0284C7',
     about:
       'Named after the sacred Satluj river, encompassing Shimla, Chail, Kasauli, Narkanda, Sarahan, Kalpa & Sangla. Renowned for pine forests, apple orchards, and regal heritage architecture.',
   },
-  {
-    label: 'Dhauladhar Circuit',
+  'Dhauladhar Circuit': {
+    color: '#10B981',
     about:
       'Covers Dharamshala, McLeod Ganj, Palampur, Dalhousie & Khajjiar — dramatic Dhauladhar views, tea gardens, Tibetan culture and colonial-era retreats.',
   },
-  {
-    label: 'Beas Circuit',
+  'Beas Circuit': {
+    color: '#F59E0B',
     about:
       'Follows the Beas river through Mandi, Kullu, Naggar & Manali — apple valleys, ancient temples, riverside resorts and high-altitude adventure.',
   },
-  {
-    label: 'Tribal Circuit',
+  'Tribal Circuit': {
+    color: '#8B5CF6',
     about:
       'The wild high-altitude route across Kinnaur, Spiti & Lahaul — rugged landscapes, ancient monasteries and some of the highest motorable villages on earth.',
   },
-];
+};
 
-const BASE_HOTELS = [
-  {
-    id: 'ros-common',
-    name: 'The New Ros Common',
-    location: 'The New Ros Common, Kasauli (H.P.)',
-    desc: 'Colonial era architecture nestled amidst dense pine forest with sweeping valley views.',
-    badge: 'PREMIUM HERITAGE',
-    badgeColor: '#059669',
-    approved: 'Govt Approved',
-    amenities: [
-      { icon: '📶', label: 'Free Wifi' },
-      { icon: '🚗', label: 'Parking' },
-      { icon: '🍽️', label: 'Dining' },
-    ],
-    tariffLabel: 'Government Tariff',
-    price: 3400,
-    image: HOTEL_IMGS.ros,
-  },
-  {
-    id: 'palace-chail',
-    name: 'The Palace, Chail',
-    location: 'The Palace, Chail (H.P.) - 173217',
-    desc: 'Historic palace built by the Maharaja of Patiala, set amidst sprawling orchards & deodar woods.',
-    badge: 'FLAGSHIP PALACE',
-    badgeColor: '#F59E0B',
-    amenities: [
-      { icon: '📶', label: 'Free Wifi' },
-      { icon: '🎾', label: 'Badminton' },
-      { icon: '👑', label: 'Royal Suites' },
-    ],
-    tariffLabel: 'Standard Heritage',
-    price: 4800,
-    image: HOTEL_IMGS.palace,
-    accent: '#FDE68A',
-  },
-  {
-    id: 'peterhof',
-    name: 'The Peterhof, Shimla',
-    location: 'Chaura Maidan, Shimla (H.P.)',
-    desc: 'Historic property that housed at least seven Viceroys and Governor Generals of British India.',
-    badge: 'PREMIUM',
-    badgeColor: '#059669',
-    amenities: [
-      { icon: '📶', label: 'Wifi' },
-      { icon: '☕', label: 'Lounge' },
-      { icon: '🚗', label: 'Valet' },
-    ],
-    tariffLabel: 'HPTDC Approved',
-    price: 4200,
-    image: HOTEL_IMGS.peterhof,
-  },
-  {
-    id: 'holiday-home',
-    name: 'The Holiday Home, Shimla',
-    location: 'Circular Road, Shimla (H.P.)',
-    desc: 'Prime city location with panoramic views of Shimla valley, premier hospitality & conference facilities.',
-    badge: 'DELUXE',
-    badgeColor: '#2563EB',
-    amenities: [
-      { icon: '📶', label: 'Free Wifi' },
-      { icon: '🍽️', label: 'Multi-cuisine' },
-    ],
-    tariffLabel: 'Standard Room',
-    price: 3900,
-    image: HOTEL_IMGS.holiday,
-  },
-  {
-    id: 'golf-glade',
-    name: 'Hotel Golf Glade, Naldehra',
-    location: 'Naldehra, Shimla Hills (H.P.)',
-    desc: "Perched alongside India's oldest 9-hole golf course surrounded by thick cedar forests.",
-    badge: 'DELUXE',
-    badgeColor: '#2563EB',
-    amenities: [
-      { icon: '⛳', label: 'Golf Links' },
-      { icon: '🌲', label: 'Pine View' },
-    ],
-    tariffLabel: 'Standard Room',
-    price: 2800,
-    image: HOTEL_IMGS.golf,
-  },
-];
+const CIRCUIT_COLORS = ['#0284C7', '#10B981', '#F59E0B', '#8B5CF6'];
 
-const EXTRA_HOTELS = [
-  {
-    id: 'castle-naggar',
-    name: 'The Castle, Naggar',
-    location: 'Naggar, Kullu (H.P.)',
-    desc: 'A 15th-century castle turned heritage hotel overlooking the Kullu valley.',
-    badge: 'PREMIUM HERITAGE',
-    badgeColor: '#059669',
-    amenities: [
-      { icon: '🏰', label: 'Heritage' },
-      { icon: '🍽️', label: 'Dining' },
-      { icon: '🌄', label: 'Valley View' },
-    ],
-    tariffLabel: 'Heritage Suite',
-    price: 5100,
-    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=70',
-  },
-  {
-    id: 'kunzam-manali',
-    name: 'The Kunzam, Manali',
-    location: 'Log Huts Area, Manali (H.P.)',
-    desc: 'Riverside deluxe hotel with cosy rooms and panoramic mountain views.',
-    badge: 'DELUXE',
-    badgeColor: '#2563EB',
-    amenities: [
-      { icon: '📶', label: 'Wifi' },
-      { icon: '🔥', label: 'Heating' },
-      { icon: '🚗', label: 'Parking' },
-    ],
-    tariffLabel: 'Deluxe Room',
-    price: 3600,
-    image: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=900&q=70',
-  },
-  {
-    id: 'manimahesh-dalhousie',
-    name: 'The Manimahesh, Dalhousie',
-    location: 'Subhash Chowk, Dalhousie (H.P.)',
-    desc: 'Colonial-style retreat surrounded by deodar forests in the heart of Dalhousie.',
-    badge: 'DELUXE',
-    badgeColor: '#2563EB',
-    amenities: [
-      { icon: '📶', label: 'Wifi' },
-      { icon: '🍽️', label: 'Dining' },
-      { icon: '🌲', label: 'Forest View' },
-    ],
-    tariffLabel: 'Standard Room',
-    price: 3200,
-    image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=900&q=70',
-  },
-];
-
-const QUICK_PILLS = [
-  { label: 'The Palace, Chail', hotelId: 'palace-chail' },
-  { label: 'The Holiday Home, Shimla', hotelId: 'holiday-home' },
-  { label: 'The Kunzam, Manali', hotelId: 'kunzam-manali' },
-  { label: 'The Manimahesh, Dalhousie', hotelId: 'manimahesh-dalhousie' },
+// Quick pills ke liye preferred flagship slugs — API me na mile to top
+// premium/deluxe hotels se fill ho jayenge.
+const PREFERRED_PILL_SLUGS = [
+  'the-palace-chail',
+  'the-holiday-home-shimla',
+  'the-kunzam-manali',
+  'the-manimahesh-dalhousie',
 ];
 
 const WHY = [
@@ -344,14 +209,18 @@ export default function HimachalScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef(null);
   const hotelsY = useRef(0);
-  const circuitsY = useRef(0);
   const faqY = useRef(0);
 
-  const [quickActive, setQuickActive] = useState(0);
-  const [circuit, setCircuit] = useState(0);
-  const [showAll, setShowAll] = useState(false);
+  const [quickActive, setQuickActive] = useState(-1);
+  const [activeCircuit, setActiveCircuit] = useState('All');
+  const [visibleCount, setVisibleCount] = useState(6);
   const [openFaq, setOpenFaq] = useState(0);
   const [mapOpen, setMapOpen] = useState(false);
+
+  const [hptdc, setHptdc] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [apiError, setApiError] = useState(null);
 
   const [booking, setBooking] = useState(null);
   const [checkIn, setCheckIn] = useState(null);
@@ -359,18 +228,98 @@ export default function HimachalScreen({ navigation }) {
   const [guests, setGuests] = useState(2);
   const [dateField, setDateField] = useState(null);
 
+  const load = useCallback(async (signal, opts = {}) => {
+    if (opts.refresh) setRefreshing(true);
+    else {
+      setLoading(true);
+      setApiError(null);
+    }
+    try {
+      const data = await fetchHptdcHotels({ signal });
+      if (signal?.aborted) return;
+      setHptdc(data);
+      setApiError(null);
+      setActiveCircuit((prev) =>
+        prev === 'All' || data.circuits.some((c) => c.name === prev) ? prev : 'All'
+      );
+    } catch (e) {
+      if (e?.name === 'AbortError') return;
+      setApiError(e);
+      setHptdc(null);
+    } finally {
+      if (!signal?.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    load(ctrl.signal);
+    return () => ctrl.abort();
+  }, [load]);
+
+  const onRefresh = () => load(undefined, { refresh: true });
+
   const scrollTo = (y) => scrollRef.current?.scrollTo({ y: Math.max(0, y - 6), animated: true });
   const goHotels = () => scrollTo(hotelsY.current);
-  const goCircuits = () => scrollTo(circuitsY.current);
   const goFaq = () => scrollTo(faqY.current);
 
-  const hotels = showAll ? [...BASE_HOTELS, ...EXTRA_HOTELS] : BASE_HOTELS;
+  const allHotels = hptdc?.hotels || [];
+  const apiCircuits = hptdc?.circuits || [];
+  const totalHotels = hptdc?.total || allHotels.length;
+  const circuitTabs = [{ name: 'All', count: totalHotels }, ...apiCircuits];
+  const filteredHotels =
+    activeCircuit === 'All' ? allHotels : allHotels.filter((h) => h.circuit === activeCircuit);
+  const hotels = filteredHotels.slice(0, visibleCount);
+  const hasMore = filteredHotels.length > visibleCount;
+  const canCollapse = visibleCount > 6;
+
+  const activeCircuitAbout =
+    activeCircuit === 'All'
+      ? 'All official HPTDC properties across Himachal Pradesh, grouped by circuit. Use the tabs above to filter by circuit.'
+      : CIRCUIT_INFO[activeCircuit]?.about ||
+        `Official HPTDC properties across the ${activeCircuit}.`;
+
+  // Live API se 4 flagship pills. Preferred slugs na mile to top premium/
+  // deluxe hotels se fill hota hai.
+  const quickPills = (() => {
+    const bySlug = new Map(allHotels.map((h) => [h.slug, h]));
+    const picks = PREFERRED_PILL_SLUGS.map((slug) => bySlug.get(slug)).filter(Boolean);
+    if (picks.length < 4) {
+      const used = new Set(picks.map((h) => h.slug));
+      const rank = (h) => (h.className === 'Premium' ? 0 : h.className === 'Deluxe' ? 1 : 2);
+      const rest = allHotels
+        .filter((h) => !used.has(h.slug))
+        .sort((a, b) => rank(a) - rank(b));
+      picks.push(...rest.slice(0, 4 - picks.length));
+    }
+    return picks.slice(0, 4).map((h) => ({ label: h.name, slug: h.slug, hotel: h }));
+  })();
+
+  const selectCircuit = (name) => {
+    setActiveCircuit(name);
+    setVisibleCount(6);
+    setQuickActive(-1);
+  };
 
   const openBooking = (hotel) => {
     setBooking(hotel);
     setCheckIn(null);
     setCheckOut(null);
     setGuests(2);
+  };
+
+  const openHotelDetail = (hotel) => {
+    const similar = allHotels
+      .filter((h) => h.slug && h.slug !== hotel.slug && h.circuit === hotel.circuit)
+      .slice(0, 4);
+    navigation.navigate('HptdcHotelDetail', {
+      slug: hotel.slug,
+      item: hotel,
+      similar,
+    });
   };
   const closeBooking = () => {
     setBooking(null);
@@ -382,9 +331,13 @@ export default function HimachalScreen({ navigation }) {
 
   const pickQuick = (index) => {
     setQuickActive(index);
-    const target = QUICK_PILLS[index].hotelId;
-    if (EXTRA_HOTELS.some((h) => h.id === target)) setShowAll(true);
-    goHotels();
+    const pill = quickPills[index];
+    if (!pill) return;
+    setActiveCircuit(pill.hotel.circuit);
+    const circuitHotels = allHotels.filter((h) => h.circuit === pill.hotel.circuit);
+    const targetIndex = circuitHotels.findIndex((h) => h.slug === pill.hotel.slug);
+    setVisibleCount(Math.max(6, targetIndex + 1));
+    setTimeout(goHotels, 60);
   };
 
   const pickDate = (d) => {
@@ -421,6 +374,14 @@ export default function HimachalScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         style={s.scroll}
         contentContainerStyle={{ paddingBottom: 24 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={C.blue}
+            colors={[C.blue]}
+          />
+        }
       >
         {/* Hero */}
         <ImageBackground source={IMG_HERO} style={s.hero} resizeMode="cover">
@@ -450,11 +411,11 @@ export default function HimachalScreen({ navigation }) {
 
             <View style={s.heroStats}>
               <View style={s.heroStat}>
-                <Text style={s.heroStatValue}>50+</Text>
+                <Text style={s.heroStatValue}>{totalHotels ? totalHotels : '—'}</Text>
                 <Text style={s.heroStatLabel}>Govt Properties</Text>
               </View>
               <View style={s.heroStat}>
-                <Text style={s.heroStatValue}>4</Text>
+                <Text style={s.heroStatValue}>{apiCircuits.length || '—'}</Text>
                 <Text style={s.heroStatLabel}>Scenic Circuits</Text>
               </View>
               <View style={s.heroStat}>
@@ -466,24 +427,26 @@ export default function HimachalScreen({ navigation }) {
         </ImageBackground>
 
         {/* Quick flagship pills */}
-        <View style={s.pillsWrap}>
-          <Text style={s.pillsLabel}>POPULAR FLAGSHIP HOTELS</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pillsRow}>
-            {QUICK_PILLS.map((pill, idx) => {
-              const active = quickActive === idx;
-              return (
-                <TouchableOpacity
-                  key={pill.label}
-                  onPress={() => pickQuick(idx)}
-                  activeOpacity={0.85}
-                  style={[s.pill, active && s.pillActive]}
-                >
-                  <Text style={[s.pillText, active && s.pillTextActive]}>{pill.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+        {quickPills.length ? (
+          <View style={s.pillsWrap}>
+            <Text style={s.pillsLabel}>POPULAR FLAGSHIP HOTELS</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.pillsRow}>
+              {quickPills.map((pill, idx) => {
+                const active = quickActive === idx;
+                return (
+                  <TouchableOpacity
+                    key={pill.slug || pill.label}
+                    onPress={() => pickQuick(idx)}
+                    activeOpacity={0.85}
+                    style={[s.pill, active && s.pillActive]}
+                  >
+                    <Text style={[s.pillText, active && s.pillTextActive]}>{pill.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ) : null}
 
         {/* Joint initiative */}
         <View style={s.introSection}>
@@ -511,33 +474,29 @@ export default function HimachalScreen({ navigation }) {
         </View>
 
         {/* Circuits */}
-        <View
-          style={s.circuitsSection}
-          onLayout={(e) => {
-            circuitsY.current = e.nativeEvent.layout.y;
-          }}
-        >
+        <View style={s.circuitsSection}>
           <View style={s.sectionHead}>
             <Text style={s.kicker}>CURATED REGIONAL ROUTES</Text>
             <Text style={s.h2}>Discover Himachal By Circuit</Text>
             <Text style={s.sectionSub}>
-              Explore properties organized across 4 official historical circuits.
+              Explore properties organized across {apiCircuits.length || 'official'} historical circuits.
             </Text>
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.circuitTabs}>
-            {CIRCUITS.map((item, idx) => {
-              const active = circuit === idx;
+            {circuitTabs.map((item) => {
+              const active = activeCircuit === item.name;
+              const label = item.name === 'All' ? 'All Circuits' : item.name;
               return (
                 <TouchableOpacity
-                  key={item.label}
-                  onPress={() => setCircuit(idx)}
+                  key={item.name}
+                  onPress={() => selectCircuit(item.name)}
                   activeOpacity={0.85}
                   style={[s.circuitTab, active && s.circuitTabActive]}
                 >
                   <Text style={[s.circuitTabText, active && s.circuitTabTextActive]}>
-                    {item.label}
-                    {active ? ' (Active)' : ''}
+                    {label}
+                    {item.count ? ` (${item.count})` : ''}
                   </Text>
                 </TouchableOpacity>
               );
@@ -546,8 +505,10 @@ export default function HimachalScreen({ navigation }) {
 
           <View style={s.circuitAbout}>
             <Text style={s.circuitAboutText}>
-              <Text style={s.circuitAboutBold}>About {CIRCUITS[circuit].label}: </Text>
-              {CIRCUITS[circuit].about}
+              <Text style={s.circuitAboutBold}>
+                About {activeCircuit === 'All' ? 'All Circuits' : activeCircuit}:{' '}
+              </Text>
+              {activeCircuitAbout}
             </Text>
           </View>
         </View>
@@ -559,73 +520,125 @@ export default function HimachalScreen({ navigation }) {
             hotelsY.current = e.nativeEvent.layout.y;
           }}
         >
-          {hotels.map((hotel) => (
-            <View key={hotel.id} style={[s.hotelCard, hotel.accent ? { borderColor: hotel.accent } : null]}>
-              <View style={s.hotelImgWrap}>
-                <Image source={imageSource(hotel.image)} style={s.hotelImg} resizeMode="cover" />
-                <View style={[s.hotelBadge, { backgroundColor: hotel.badgeColor }]}>
-                  <Text style={s.hotelBadgeText}>{hotel.badge}</Text>
-                </View>
-                {hotel.approved ? (
-                  <View style={s.govtApproved}>
-                    <Text style={s.govtApprovedText}>{hotel.approved}</Text>
-                  </View>
-                ) : null}
-              </View>
-
-              <View style={s.hotelBody}>
-                <View style={s.hotelLocationRow}>
-                  <Ionicons name="location" size={13} color="#EF4444" />
-                  <Text style={s.hotelLocation} numberOfLines={2}>
-                    {hotel.location}
-                  </Text>
-                </View>
-                <Text style={s.hotelName}>{hotel.name}</Text>
-                <Text style={s.hotelDesc}>{hotel.desc}</Text>
-
-                <View style={s.amenities}>
-                  {hotel.amenities.map((a) => (
-                    <View key={a.label} style={s.amenity}>
-                      <Text style={s.amenityIcon}>{a.icon}</Text>
-                      <Text style={s.amenityText}>{a.label}</Text>
-                    </View>
-                  ))}
-                </View>
-
-                <View style={s.hotelFoot}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.tariffLabel}>{hotel.tariffLabel}</Text>
-                    <Text style={s.price}>
-                      ₹{hotel.price.toLocaleString('en-IN')}{' '}
-                      <Text style={s.pricePer}>/ night</Text>
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={s.bookBtn}
-                    activeOpacity={0.85}
-                    onPress={() => openBooking(hotel)}
-                  >
-                    <Text style={s.bookBtnText}>BOOK ONLINE</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+          {loading ? (
+            <View style={s.stateCard}>
+              <ActivityIndicator color={C.blue} />
+              <Text style={s.stateTitle}>Loading HPTDC properties…</Text>
+              <Text style={s.stateText}>Live data from adotrip.com/api/v1/hptdc</Text>
             </View>
-          ))}
+          ) : apiError ? (
+            <View style={s.stateCard}>
+              <Text style={s.stateEmoji}>⚠️</Text>
+              <Text style={s.stateTitle}>Live HPTDC data is not loaded yet</Text>
+              <Text style={s.stateText}>{apiError.message}</Text>
+              <TouchableOpacity style={s.retryBtn} activeOpacity={0.85} onPress={() => load()}>
+                <Text style={s.retryText}>RETRY</Text>
+              </TouchableOpacity>
+            </View>
+          ) : hotels.length === 0 ? (
+            <View style={s.stateCard}>
+              <Text style={s.stateEmoji}>🏔️</Text>
+              <Text style={s.stateTitle}>No properties found</Text>
+              <Text style={s.stateText}>
+                Is circuit me abhi koi HPTDC property listed nahi hai.
+              </Text>
+            </View>
+          ) : (
+            hotels.map((hotel) => (
+              <View key={hotel.id} style={s.hotelCard}>
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() => openHotelDetail(hotel)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View details for ${hotel.name}`}
+                >
+                  <View style={s.hotelImgWrap}>
+                    <Image
+                      source={imageSource(hotel.image || IMG_HERO)}
+                      style={s.hotelImg}
+                      resizeMode="cover"
+                    />
+                    <View style={[s.hotelBadge, { backgroundColor: hotel.badgeColor }]}>
+                      <Text style={s.hotelBadgeText}>{hotel.badge}</Text>
+                    </View>
+                    {hotel.approved ? (
+                      <View style={s.govtApproved}>
+                        <Text style={s.govtApprovedText}>{hotel.approved}</Text>
+                      </View>
+                    ) : null}
+                  </View>
 
-          <TouchableOpacity
-            style={s.loadMore}
-            activeOpacity={0.85}
-            onPress={() => setShowAll((v) => !v)}
-          >
-            <Text style={s.loadMoreText}>
-              {showAll ? 'Show Less Properties' : 'View All 25+ Satluj & Himachal Properties'}
-            </Text>
-            <Ionicons
-              name={showAll ? 'chevron-up' : 'chevron-down'}
-              size={16}
-              color={C.slate400}
-            />
-          </TouchableOpacity>
+                  <View style={[s.hotelBody, { paddingBottom: 0 }]}>
+                    <View style={s.hotelLocationRow}>
+                      <Ionicons name="location" size={13} color="#EF4444" />
+                      <Text style={s.hotelLocation} numberOfLines={2}>
+                        {hotel.location}
+                      </Text>
+                    </View>
+                    <Text style={s.hotelCircuit}>{hotel.circuit}</Text>
+                    <View style={s.hotelNameRow}>
+                      <Text style={s.hotelName}>{hotel.name}</Text>
+                      <Ionicons name="chevron-forward" size={16} color={C.slate400} />
+                    </View>
+                    <Text style={s.hotelDesc}>{hotel.desc}</Text>
+
+                    <View style={s.amenities}>
+                      {hotel.amenities.map((a) => (
+                        <View key={a.label} style={s.amenity}>
+                          <Text style={s.amenityIcon}>{a.icon}</Text>
+                          <Text style={s.amenityText}>{a.label}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                <View style={[s.hotelBody, { paddingTop: 0 }]}>
+                  <View style={s.hotelFoot}>
+                    <TouchableOpacity
+                      style={{ flex: 1 }}
+                      activeOpacity={0.7}
+                      onPress={() => openHotelDetail(hotel)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View details for ${hotel.name}`}
+                    >
+                      <Text style={s.tariffLabel}>{hotel.tariffLabel}</Text>
+                      <Text style={s.price}>
+                        {hotel.price
+                          ? `₹${hotel.price.toLocaleString('en-IN')}`
+                          : 'Tariff on request'}
+                        {hotel.price ? <Text style={s.pricePer}> / night</Text> : null}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={s.bookBtn}
+                      activeOpacity={0.85}
+                      onPress={() => openBooking(hotel)}
+                    >
+                      <Text style={s.bookBtnText}>BOOK ONLINE</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            ))
+          )}
+
+          {!loading && !apiError && (hasMore || canCollapse) ? (
+            <TouchableOpacity
+              style={s.loadMore}
+              activeOpacity={0.85}
+              onPress={() => setVisibleCount(hasMore ? filteredHotels.length : 6)}
+            >
+              <Text style={s.loadMoreText}>
+                {hasMore ? `View All ${filteredHotels.length} Properties` : 'Show Less Properties'}
+              </Text>
+              <Ionicons
+                name={hasMore ? 'chevron-down' : 'chevron-up'}
+                size={16}
+                color={C.slate400}
+              />
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Accommodation portfolio map */}
@@ -649,7 +662,7 @@ export default function HimachalScreen({ navigation }) {
                 <Text style={s.mapPillText}>CIRCUIT EXPLORER</Text>
               </View>
               <Text style={s.mapText}>
-                Explore all 50+ official properties tagged on interactive live route map
+                Explore all {totalHotels ? `${totalHotels} ` : ''}official properties tagged on interactive live route map
               </Text>
               <TouchableOpacity style={s.mapBtn} activeOpacity={0.85} onPress={() => setMapOpen(true)}>
                 <Text style={s.mapBtnText}>Open Circuit Map</Text>
@@ -784,7 +797,11 @@ export default function HimachalScreen({ navigation }) {
             {booking ? (
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
                 <View style={s.bookHead}>
-                  <Image source={imageSource(booking.image)} style={s.bookImg} resizeMode="cover" />
+                  <Image
+                    source={imageSource(booking.image || IMG_HERO)}
+                    style={s.bookImg}
+                    resizeMode="cover"
+                  />
                   <View style={{ flex: 1 }}>
                     <View style={[s.bookBadge, { backgroundColor: booking.badgeColor }]}>
                       <Text style={s.bookBadgeText}>{booking.badge}</Text>
@@ -795,6 +812,23 @@ export default function HimachalScreen({ navigation }) {
                     </Text>
                   </View>
                 </View>
+
+                {booking.gallery?.length ? (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={s.bookGalleryRow}
+                  >
+                    {booking.gallery.slice(0, 6).map((uri) => (
+                      <Image
+                        key={uri}
+                        source={{ uri }}
+                        style={s.bookGalleryImg}
+                        resizeMode="cover"
+                      />
+                    ))}
+                  </ScrollView>
+                ) : null}
 
                 <View style={s.bookDivider} />
 
@@ -850,6 +884,21 @@ export default function HimachalScreen({ navigation }) {
                   </View>
                 </View>
 
+                {booking.facilities?.length ? (
+                  <>
+                    <Text style={[s.bookLabel, { marginTop: 14 }]}>PROPERTY FACILITIES</Text>
+                    <View style={s.facilityChips}>
+                      {booking.facilities.slice(0, 8).map((facility) => (
+                        <View key={facility} style={s.facilityChip}>
+                          <Text style={s.facilityChipText} numberOfLines={1}>
+                            {facility}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </>
+                ) : null}
+
                 <View style={s.summary}>
                   <View style={s.summaryRow}>
                     <Text style={s.summaryLabel}>
@@ -861,6 +910,23 @@ export default function HimachalScreen({ navigation }) {
                   </View>
                   <Text style={s.summaryNote}>No payment now · Pay at the hotel</Text>
                 </View>
+
+                {booking.contact?.phone || booking.contact?.email ? (
+                  <View style={s.bookContact}>
+                    {booking.contact.phone ? (
+                      <View style={s.contactRow}>
+                        <Ionicons name="call-outline" size={13} color={C.blue} />
+                        <Text style={s.contactText}>{booking.contact.phone}</Text>
+                      </View>
+                    ) : null}
+                    {booking.contact.email ? (
+                      <View style={s.contactRow}>
+                        <Ionicons name="mail-outline" size={13} color={C.blue} />
+                        <Text style={s.contactText}>{booking.contact.email}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
 
                 <TouchableOpacity style={s.confirmBtn} activeOpacity={0.88} onPress={confirmBooking}>
                   <Text style={s.confirmBtnText}>CONFIRM BOOKING</Text>
@@ -953,39 +1019,46 @@ export default function HimachalScreen({ navigation }) {
             </View>
             <Image source={IMG_MAP} style={s.mapSheetImg} resizeMode="cover" />
             <View style={{ marginTop: 12 }}>
-              {CIRCUITS.map((item, idx) => (
-                <TouchableOpacity
-                  key={item.label}
-                  style={s.mapCircuitRow}
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    setCircuit(idx);
-                    setMapOpen(false);
-                    setTimeout(goCircuits, 250);
-                  }}
-                >
-                  <View
-                    style={[
-                      s.mapCircuitDot,
-                      {
-                        backgroundColor: ['#0284C7', '#10B981', '#F59E0B', '#8B5CF6'][idx],
-                      },
-                    ]}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.mapCircuitName}>{item.label}</Text>
-                    <Text style={s.mapCircuitCount}>
-                      {['12', '9', '14', '7'][idx]} official properties
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={15} color={C.slate300} />
-                </TouchableOpacity>
-              ))}
+              {apiCircuits.length ? (
+                apiCircuits.map((item, idx) => (
+                  <TouchableOpacity
+                    key={item.name}
+                    style={s.mapCircuitRow}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      selectCircuit(item.name);
+                      setMapOpen(false);
+                      setTimeout(goHotels, 250);
+                    }}
+                  >
+                    <View
+                      style={[
+                        s.mapCircuitDot,
+                        {
+                          backgroundColor:
+                            CIRCUIT_INFO[item.name]?.color ||
+                            CIRCUIT_COLORS[idx % CIRCUIT_COLORS.length],
+                        },
+                      ]}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.mapCircuitName}>{item.name}</Text>
+                      <Text style={s.mapCircuitCount}>
+                        {item.count} official properties
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={15} color={C.slate300} />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={s.mapCircuitCount}>Circuits load ho rahe hain…</Text>
+              )}
             </View>
             <TouchableOpacity
               style={s.confirmBtn}
               activeOpacity={0.88}
               onPress={() => {
+                selectCircuit('All');
                 setMapOpen(false);
                 setTimeout(goHotels, 250);
               }}
@@ -1192,6 +1265,29 @@ const s = StyleSheet.create({
 
   /* Hotels */
   hotelsSection: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4, gap: 16 },
+  stateCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: C.slate200,
+    borderRadius: 13,
+    paddingVertical: 24,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    gap: 7,
+  },
+  stateEmoji: { fontSize: 26 },
+  stateTitle: { fontSize: 13.5, fontWeight: '800', color: C.slate900, textAlign: 'center' },
+  stateText: { fontSize: 11, lineHeight: 16, color: C.slate500, textAlign: 'center' },
+  retryBtn: {
+    marginTop: 8,
+    backgroundColor: C.blue,
+    borderRadius: 8,
+    paddingHorizontal: 18,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryText: { fontSize: 11.5, fontWeight: '800', letterSpacing: 0.4, color: '#FFFFFF' },
   hotelCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 13,
@@ -1232,8 +1328,17 @@ const s = StyleSheet.create({
   govtApprovedText: { fontSize: 9, fontWeight: '600', color: '#FFFFFF' },
   hotelBody: { padding: 13.5 },
   hotelLocationRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 3 },
+  hotelCircuit: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    color: C.blue,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
   hotelLocation: { flex: 1, fontSize: 10.5, color: C.slate500, marginLeft: 3, lineHeight: 15 },
-  hotelName: { fontSize: 16, fontWeight: '800', color: C.slate900, letterSpacing: -0.2 },
+  hotelNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  hotelName: { flex: 1, fontSize: 16, fontWeight: '800', color: C.slate900, letterSpacing: -0.2 },
   hotelDesc: { fontSize: 11.5, lineHeight: 17, color: C.slate600, marginTop: 4 },
   amenities: {
     flexDirection: 'row',
@@ -1504,12 +1609,28 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   bookHead: { flexDirection: 'row', gap: 11, alignItems: 'center' },
+  bookGalleryRow: { paddingTop: 10, gap: 8 },
+  bookGalleryImg: { width: 86, height: 62, borderRadius: 8, backgroundColor: C.slate200 },
   bookImg: { width: 66, height: 66, borderRadius: 10, backgroundColor: C.slate200 },
   bookBadge: { alignSelf: 'flex-start', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 },
   bookBadgeText: { fontSize: 7.5, fontWeight: '800', letterSpacing: 0.4, color: '#FFFFFF' },
   bookName: { fontSize: 14.5, fontWeight: '800', color: C.slate900, marginTop: 3 },
   bookLocation: { fontSize: 10, color: C.slate500, marginTop: 1, lineHeight: 14 },
   bookDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 13 },
+  bookContact: { marginTop: 10, gap: 4 },
+  contactRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  contactText: { flex: 1, fontSize: 10.5, color: C.slate600 },
+  facilityChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  facilityChip: {
+    backgroundColor: C.slate50,
+    borderWidth: 1,
+    borderColor: C.slate200,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    maxWidth: 240,
+  },
+  facilityChipText: { fontSize: 9.5, color: C.slate600 },
   bookLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.7, color: C.slate400 },
   dateRow: { flexDirection: 'row', gap: 9, marginTop: 6 },
   dateField: {

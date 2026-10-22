@@ -1,5 +1,5 @@
 // packages-proxy.worker.js — Cloudflare Worker (free) as a TLS proxy for the
-// Adotrip packages API. Deploy once, then set in the app:
+// Adotrip packages + HPTDC APIs. Deploy once, then set in the app:
 //
 //   EXPO_PUBLIC_PACKAGES_PROXY_URL=https://<your-worker>.workers.dev
 //
@@ -42,6 +42,68 @@ export default {
           ...cors(),
           'Content-Type': res.headers.get('Content-Type') || 'application/json',
           'Cache-Control': 'no-store', // hamesha live data — koi caching nahi
+        },
+      });
+    }
+
+    // HPTDC hotels: <worker>?hptdc=1
+    // Optional filters: circuit_type, class, hotel_type, search, per_page, page.
+    if (url.searchParams.get('hptdc') !== null) {
+      const upstream = new URL('https://www.adotrip.com/api/v1/hptdc');
+      const circuit = String(url.searchParams.get('circuit_type') || '').slice(0, 60);
+      const cls = String(url.searchParams.get('class') || '').slice(0, 30);
+      const hotelType = String(url.searchParams.get('hotel_type') || '').slice(0, 60);
+      const search = String(url.searchParams.get('search') || '').slice(0, 60);
+      const perPage = Math.min(100, Math.max(1, parseInt(url.searchParams.get('per_page'), 10) || 100));
+      const page = Math.max(1, parseInt(url.searchParams.get('page'), 10) || 1);
+      if (circuit) upstream.searchParams.set('circuit_type', circuit);
+      if (cls) upstream.searchParams.set('class', cls);
+      if (hotelType) upstream.searchParams.set('hotel_type', hotelType);
+      if (search) upstream.searchParams.set('search', search);
+      upstream.searchParams.set('per_page', String(perPage));
+      upstream.searchParams.set('page', String(page));
+
+      const res = await fetch(upstream.toString(), {
+        headers: { Accept: 'application/json', 'User-Agent': 'AdotripApp-Proxy/1.0' },
+      });
+      const body = await res.text();
+      return new Response(body, {
+        status: res.status,
+        headers: {
+          ...cors(),
+          'Content-Type': res.headers.get('Content-Type') || 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+
+    // HPTDC hotel detail: <worker>?hptdc_detail=<slug>
+    // Slug upstream path me jata hai, isliye strict validation.
+    if (url.searchParams.get('hptdc_detail') !== null) {
+      const slug = String(url.searchParams.get('hptdc_detail') || '')
+        .trim()
+        .replace(/^\/+|\/+$/g, '')
+        .slice(0, 120);
+      if (!/^[A-Za-z0-9-]+$/.test(slug)) {
+        return new Response(JSON.stringify({ error: 'bad hotel slug' }), {
+          status: 400,
+          headers: cors(),
+        });
+      }
+
+      const res = await fetch(
+        `https://www.adotrip.com/api/v1/hptdc/hotels/${encodeURIComponent(slug)}`,
+        {
+          headers: { Accept: 'application/json', 'User-Agent': 'AdotripApp-Proxy/1.0' },
+        }
+      );
+      const body = await res.text();
+      return new Response(body, {
+        status: res.status,
+        headers: {
+          ...cors(),
+          'Content-Type': res.headers.get('Content-Type') || 'application/json',
+          'Cache-Control': 'no-store',
         },
       });
     }
