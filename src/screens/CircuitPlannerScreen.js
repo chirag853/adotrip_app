@@ -30,30 +30,7 @@ import { proxiedImageUrl } from '../utils/packagesApi';
 // hero -> smart itinerary generator -> how it works -> why AI -> social proof
 // -> FAQ -> final CTA. Generator niche wala plan bhi kaam karta hai.
 const NAVY = COLORS.secondary;
-
-// Circuit Planner's "AI mission control" palette. The rest of the app keeps its
-// bright Adotrip theme, but this screen lives in a deep-space neural interface.
-const AI = {
-  bg: '#040912',
-  surface: '#0A172A',
-  surfaceSoft: 'rgba(255, 255, 255, 0.045)',
-  surfaceSoft2: 'rgba(255, 255, 255, 0.075)',
-  border: 'rgba(94, 178, 255, 0.18)',
-  borderStrong: 'rgba(92, 225, 255, 0.42)',
-  text: '#EEF6FF',
-  textMuted: '#9FB4CE',
-  textDim: '#748AA5',
-  cyan: '#5CE1FF',
-  cyanSoft: 'rgba(92, 225, 255, 0.12)',
-  violet: '#A78BFA',
-  violetSoft: 'rgba(167, 139, 250, 0.12)',
-  dangerSoft: 'rgba(248, 113, 113, 0.10)',
-  dangerBorder: 'rgba(248, 113, 113, 0.34)',
-};
-
-const HERO_AI_IMAGE = require('../../assets/ai/hero-neural.jpg');
-const AI_PATTERN = require('../../assets/ai/circuit-tile.png');
-const AI_GLOW = require('../../assets/ai/glow.png');
+const INPUT_BG = '#F2F5FB';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -208,29 +185,21 @@ function buildRouteMapHtml(stops, proxyBase) {
   <style>
     html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; }
     #map { position: relative; }
-    body { overflow: hidden; background: #071426; }
-    .leaflet-container { background: #071426; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .leaflet-tile {
-      filter: brightness(0.68) invert(1) hue-rotate(180deg) saturate(0.55) contrast(0.92);
-    }
+    body { overflow: hidden; background: #eaf2e8; }
+    .leaflet-container { background: #eaf2e8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     .stop-pin {
       width: 24px; height: 24px; border-radius: 50%;
       background: #FEE400; border: 2px solid #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.45), 0 0 0 3px rgba(92,225,255,0.18);
+      box-shadow: 0 2px 8px rgba(14,42,71,0.35);
       display: flex; align-items: center; justify-content: center;
       color: #0E2A47; font-weight: 900; font-size: 11px;
     }
-    .leaflet-control-attribution {
-      font-size: 9px;
-      background: rgba(7,20,38,0.86) !important;
-      color: #8FA6BF !important;
-    }
-    .leaflet-control-attribution a { color: #5CE1FF !important; }
+    .leaflet-control-attribution { font-size: 9px; background: rgba(255,255,255,0.86); }
     #map-error {
       position: absolute; inset: 0; z-index: 999;
       display: flex; align-items: center; justify-content: center;
-      text-align: center; padding: 20px; color: #9FB4CE;
-      font-size: 12px; background: #071426;
+      text-align: center; padding: 20px; color: #6B7280;
+      font-size: 12px; background: #eaf2e8;
     }
   </style>
 </head>
@@ -279,8 +248,7 @@ function buildRouteMapHtml(stops, proxyBase) {
       }).addTo(map);
       var coords = stops.map(function (s) { return [s.lat, s.lon]; });
       if (coords.length > 1) {
-        L.polyline(coords, { color: '#071426', weight: 6, opacity: 0.7 }).addTo(map);
-        L.polyline(coords, { color: '#5CE1FF', weight: 3, opacity: 0.95 }).addTo(map);
+        L.polyline(coords, { color: '#0E2A47', weight: 3, opacity: 0.9 }).addTo(map);
       }
       stops.forEach(function (s) {
         var icon = L.divIcon({
@@ -333,19 +301,6 @@ function SectionHead({ kicker, title, sub }) {
   );
 }
 
-// A hairline of light along the top of the core AI cards.
-function CardAccent() {
-  return (
-    <LinearGradient
-      pointerEvents="none"
-      colors={['transparent', 'rgba(92, 225, 255, 0.72)', 'transparent']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={s.cardAccent}
-    />
-  );
-}
-
 function DestinationDetailsCard({
   data,
   cities,
@@ -365,10 +320,9 @@ function DestinationDetailsCard({
 
   return (
     <View style={[s.card, { marginTop: 12 }]} onLayout={onLayout}>
-      <CardAccent />
       <View style={s.destHead}>
         <View style={s.mapIcon}>
-          <Ionicons name="location" size={17} color={AI.cyan} />
+          <Ionicons name="location" size={17} color={NAVY} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={s.planTag}>DESTINATIONS & ATTRACTIONS</Text>
@@ -383,12 +337,12 @@ function DestinationDetailsCard({
               : 'Places, nearby attractions and how to reach.'}
           </Text>
         </View>
-        {loading ? <ActivityIndicator size="small" color={AI.cyan} /> : null}
+        {loading ? <ActivityIndicator size="small" color={COLORS.primaryText} /> : null}
       </View>
 
       {loading ? (
         <View style={s.destLoading}>
-          <ActivityIndicator size="small" color={AI.cyan} />
+          <ActivityIndicator size="small" color={COLORS.primaryText} />
           <View style={{ flex: 1 }}>
             <Text style={s.destLoadingTitle}>Fetching destination details...</Text>
             <Text style={s.destLoadingSub}>Attractions, local highlights and how to reach</Text>
@@ -398,7 +352,7 @@ function DestinationDetailsCard({
 
       {error ? (
         <View style={s.errBox}>
-          <Ionicons name="alert-circle-outline" size={16} color="#FCA5A5" />
+          <Ionicons name="alert-circle-outline" size={16} color={COLORS.danger} />
           <Text style={s.errT}>{error}</Text>
           {onRetry ? (
             <TouchableOpacity style={s.retryBtn} onPress={onRetry} activeOpacity={0.85}>
@@ -442,7 +396,7 @@ function DestinationDetailsCard({
                         />
                       ) : (
                         <View style={[s.destThumb, s.destThumbEmpty]}>
-                          <Ionicons name="image-outline" size={18} color={AI.textDim} />
+                          <Ionicons name="image-outline" size={18} color="#A0AABD" />
                         </View>
                       )}
 
@@ -473,7 +427,7 @@ function DestinationDetailsCard({
                         <Ionicons
                           name={open ? 'chevron-up' : 'chevron-down'}
                           size={14}
-                          color={open ? '#04101C' : AI.textMuted}
+                          color={NAVY}
                         />
                       </View>
                     </TouchableOpacity>
@@ -495,7 +449,7 @@ function DestinationDetailsCard({
                           <View style={s.destMetaRow}>
                             {dest.days ? (
                               <View style={s.destMetaChip}>
-                                <Ionicons name="time-outline" size={11} color={AI.cyan} />
+                                <Ionicons name="time-outline" size={11} color={NAVY} />
                                 <Text style={s.destMetaChipT}>
                                   {dest.days} day{dest.days > 1 ? 's' : ''} suggested
                                 </Text>
@@ -503,7 +457,7 @@ function DestinationDetailsCard({
                             ) : null}
                             {dest.views ? (
                               <View style={s.destMetaChip}>
-                                <Ionicons name="eye-outline" size={11} color={AI.cyan} />
+                                <Ionicons name="eye-outline" size={11} color={NAVY} />
                                 <Text style={s.destMetaChipT}>
                                   {formatViews(dest.views)} views
                                 </Text>
@@ -545,7 +499,7 @@ function DestinationDetailsCard({
                                     <Ionicons
                                       name="location-outline"
                                       size={16}
-                                      color={AI.textDim}
+                                      color="#A0AABD"
                                     />
                                   </View>
                                 )}
@@ -885,31 +839,16 @@ export default function CircuitPlannerScreen({ navigation }) {
   const extraStopCount = extraDests.filter((d) => String(d || '').trim()).length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: AI.bg }} edges={['top']}>
-      <StatusBar style="light" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top']}>
+      <StatusBar style="dark" />
 
-      {/* Fixed neural backdrop behind the whole page */}
-      <View style={s.pageBackdrop} pointerEvents="none">
-        <Image source={AI_PATTERN} style={s.pagePattern} resizeMode="repeat" />
-        <Image
-          source={AI_GLOW}
-          style={[s.pageGlow, s.pageGlowTop]}
-          tintColor="#26D9FF"
-        />
-        <Image
-          source={AI_GLOW}
-          style={[s.pageGlow, s.pageGlowMid]}
-          tintColor="#7C5CFF"
-        />
-      </View>
-
-      {/* Common app header, in AI mode */}
-      <AppHeader onBack={() => navigation.goBack()} aiTheme />
+      {/* Common app header */}
+      <AppHeader onBack={() => navigation.goBack()} />
 
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
-        style={{ backgroundColor: 'transparent' }}
+        style={{ backgroundColor: '#F6F7FB' }}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Offer strip */}
@@ -918,86 +857,63 @@ export default function CircuitPlannerScreen({ navigation }) {
           activeOpacity={0.9}
           onPress={() => navigation.navigate('Main', { screen: 'Holidays' })}
         >
-          <Ionicons name="pricetag" size={12} color={COLORS.primary} />
+          <Ionicons name="pricetag" size={12} color={NAVY} />
           <Text style={s.offerT}>HOLIDAY SPECIAL</Text>
           <View style={s.offerDivider} />
           <Text style={s.offerS} numberOfLines={1}>Up to 50% OFF on your next trip</Text>
-          <Ionicons name="arrow-forward" size={12} color={COLORS.primary} />
+          <Ionicons name="arrow-forward" size={12} color={NAVY} />
         </TouchableOpacity>
 
         <View style={{ paddingHorizontal: 16 }}>
           {/* Hero */}
           <LinearGradient
-            colors={['#071426', '#07182D', '#0A1E38']}
+            colors={['#0A1626', '#0E2A47', '#12375D']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={s.hero}
           >
-            <Image
-              source={HERO_AI_IMAGE}
-              style={s.heroImage}
-              resizeMode="cover"
-              pointerEvents="none"
-            />
-            <LinearGradient
-              pointerEvents="none"
-              colors={['rgba(4, 9, 18, 0.96)', 'rgba(4, 9, 18, 0.70)', 'rgba(4, 9, 18, 0.20)']}
-              start={{ x: 0, y: 0.35 }}
-              end={{ x: 1, y: 0.65 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <LinearGradient
-              pointerEvents="none"
-              colors={['rgba(4, 9, 18, 0.08)', 'rgba(4, 9, 18, 0.64)']}
-              start={{ x: 0.5, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-
-            <View style={s.heroContent}>
-              <View style={s.heroTop}>
-                <View style={s.heroBadge}>
-                  <Ionicons name="sparkles" size={10} color={AI.cyan} />
-                  <Text style={s.heroBadgeT}>AI-POWERED TRIP PLANNER</Text>
+            <View style={s.heroTop}>
+              <View style={s.heroBadge}>
+                <Ionicons name="sparkles" size={10} color={COLORS.primary} />
+                <Text style={s.heroBadgeT}>AI-POWERED TRIP PLANNER</Text>
+              </View>
+              <View style={{ flexDirection: 'row' }}>
+                <View style={s.heroOrb}>
+                  <Ionicons name="sparkles" size={13} color={COLORS.primary} />
                 </View>
-                <View style={{ flexDirection: 'row' }}>
-                  <View style={s.heroOrb}>
-                    <Ionicons name="sparkles" size={13} color={AI.cyan} />
-                  </View>
-                  <View style={[s.heroOrb, s.heroOrbViolet, { marginLeft: 6 }]}>
-                    <Ionicons name="airplane" size={13} color="#C4B5FD" />
-                  </View>
+                <View style={[s.heroOrb, { marginLeft: 6, backgroundColor: 'rgba(255,255,255,0.10)' }]}>
+                  <Ionicons name="airplane" size={13} color="#BFD3EA" />
                 </View>
               </View>
+            </View>
 
-              <Text style={s.heroT}>
-                Plan Your Perfect Trip in Minutes with{' '}
-                <Text style={s.heroAi}>AI</Text>
-              </Text>
-              <Text style={s.heroS}>
-                A free personalised itinerary for your next adventure — planned in seconds, booked in a tap.
-              </Text>
+            <Text style={s.heroT}>
+              Plan Your Perfect trip in Minutes with{' '}
+              <Text style={{ color: COLORS.primary }}>AI</Text>
+            </Text>
+            <Text style={s.heroS}>
+              A free personalised itinerary for your next adventure — planned in seconds, booked in a tap.
+            </Text>
 
-              <View style={{ marginTop: 14 }}>
-                {HERO_POINTS.map((p) => (
-                  <View key={p} style={s.heroPoint}>
-                    <View style={s.heroCheck}>
-                      <Ionicons name="checkmark" size={10} color="#04101C" />
-                    </View>
-                    <Text style={s.heroPointT}>{p}</Text>
+            <View style={{ marginTop: 14 }}>
+              {HERO_POINTS.map((p) => (
+                <View key={p} style={s.heroPoint}>
+                  <View style={s.heroCheck}>
+                    <Ionicons name="checkmark" size={10} color={NAVY} />
                   </View>
-                ))}
-              </View>
+                  <Text style={s.heroPointT}>{p}</Text>
+                </View>
+              ))}
+            </View>
 
-              <View style={s.heroBtns}>
-                <TouchableOpacity style={s.heroBtn} onPress={() => scrollTo(formY)} activeOpacity={0.9}>
-                  <Text style={s.heroBtnT}>Start Planning</Text>
-                  <Ionicons name="arrow-forward" size={14} color={NAVY} style={{ marginLeft: 6 }} />
-                </TouchableOpacity>
-                <TouchableOpacity style={s.heroBtnGhost} onPress={() => scrollTo(howY)} activeOpacity={0.9}>
-                  <Text style={s.heroBtnGhostT}>How It Works</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={s.heroBtns}>
+              <TouchableOpacity style={s.heroBtn} onPress={() => scrollTo(formY)} activeOpacity={0.9}>
+                <Text style={s.heroBtnT}>Start Planning</Text>
+                <Ionicons name="arrow-forward" size={14} color={NAVY} style={{ marginLeft: 6 }} />
+              </TouchableOpacity>
+              <TouchableOpacity style={s.heroBtnGhost} onPress={() => scrollTo(howY)} activeOpacity={0.9}>
+                <Text style={s.heroBtnGhostT}>How It Works</Text>
+              </TouchableOpacity>
             </View>
           </LinearGradient>
 
@@ -1008,10 +924,9 @@ export default function CircuitPlannerScreen({ navigation }) {
               formY.current = e.nativeEvent.layout.y;
             }}
           >
-            <CardAccent />
             <View style={s.genHead}>
               <View style={s.genIcon}>
-                <Ionicons name="sparkles" size={17} color={AI.cyan} />
+                <Ionicons name="sparkles" size={17} color={NAVY} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.genTitle}>Smart Itinerary Generator</Text>
@@ -1026,34 +941,34 @@ export default function CircuitPlannerScreen({ navigation }) {
             </View>
 
             <View style={s.field}>
-              <Ionicons name="location-outline" size={17} color={AI.textDim} style={{ marginRight: 9 }} />
+              <Ionicons name="location-outline" size={17} color="#7E8AA0" style={{ marginRight: 9 }} />
               <TextInput
                 style={s.input}
                 value={to}
                 onChangeText={setTo}
                 placeholder="Where do you want to go?"
-                placeholderTextColor="#6F849F"
+                placeholderTextColor="#96A0B5"
                 autoCorrect={false}
               />
             </View>
 
             <View style={s.twoCol}>
               <TouchableOpacity style={s.halfField} onPress={() => setDateField('start')} activeOpacity={0.85}>
-                <Ionicons name="calendar-outline" size={16} color={AI.textDim} style={{ marginRight: 7 }} />
-                <Text style={[s.halfT, !startDate && { color: '#6F849F' }]} numberOfLines={1}>
+                <Ionicons name="calendar-outline" size={16} color="#7E8AA0" style={{ marginRight: 7 }} />
+                <Text style={[s.halfT, !startDate && { color: '#96A0B5' }]} numberOfLines={1}>
                   {startDate ? fmtDate(startDate) : 'Start Date'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.halfField} onPress={() => setDateField('end')} activeOpacity={0.85}>
-                <Ionicons name="calendar-outline" size={16} color={AI.textDim} style={{ marginRight: 7 }} />
-                <Text style={[s.halfT, !endDate && { color: '#6F849F' }]} numberOfLines={1}>
+                <Ionicons name="calendar-outline" size={16} color="#7E8AA0" style={{ marginRight: 7 }} />
+                <Text style={[s.halfT, !endDate && { color: '#96A0B5' }]} numberOfLines={1}>
                   {endDate ? fmtDate(endDate) : 'End Date'}
                 </Text>
               </TouchableOpacity>
             </View>
 
             <View style={s.travelRow}>
-              <Ionicons name="people-outline" size={17} color={AI.textDim} />
+              <Ionicons name="people-outline" size={17} color="#7E8AA0" />
               <Text style={s.travelLabel}>Travellers</Text>
               <Text style={s.travelVal}>{adults} Adult{adults > 1 ? 's' : ''}</Text>
               <TouchableOpacity
@@ -1061,37 +976,37 @@ export default function CircuitPlannerScreen({ navigation }) {
                 onPress={() => setAdults((n) => Math.max(1, n - 1))}
                 hitSlop={6}
               >
-                <Ionicons name="remove" size={14} color={AI.text} />
+                <Ionicons name="remove" size={14} color={NAVY} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={s.stepBtn}
                 onPress={() => setAdults((n) => Math.min(12, n + 1))}
                 hitSlop={6}
               >
-                <Ionicons name="add" size={14} color={AI.text} />
+                <Ionicons name="add" size={14} color={NAVY} />
               </TouchableOpacity>
             </View>
 
             {extraDests.map((d, i) => (
               <View key={`dest-${i}`} style={s.extraRow}>
-                <Ionicons name="location-outline" size={16} color={AI.textDim} style={{ marginRight: 8 }} />
+                <Ionicons name="location-outline" size={16} color="#7E8AA0" style={{ marginRight: 8 }} />
                 <TextInput
                   style={s.extraInput}
                   value={d}
                   onChangeText={(v) => updateDestination(i, v)}
                   placeholder={`Destination ${i + 2}`}
-                  placeholderTextColor="#6F849F"
+                  placeholderTextColor="#96A0B5"
                   autoCorrect={false}
                 />
                 <TouchableOpacity onPress={() => removeDestination(i)} hitSlop={8}>
-                  <Ionicons name="close-circle" size={17} color={AI.textDim} />
+                  <Ionicons name="close-circle" size={17} color="#A0AABD" />
                 </TouchableOpacity>
               </View>
             ))}
 
             {extraDests.length < 5 && (
               <TouchableOpacity style={s.addDest} onPress={addDestination} activeOpacity={0.8}>
-                <Ionicons name="add-circle-outline" size={15} color={AI.cyan} />
+                <Ionicons name="add-circle-outline" size={15} color={NAVY} />
                 <Text style={s.addDestT}>Add Destination (Max 5)</Text>
               </TouchableOpacity>
             )}
@@ -1129,7 +1044,7 @@ export default function CircuitPlannerScreen({ navigation }) {
                 <Animated.View
                   style={[s.aiOrb, { opacity: aiGlow, transform: [{ scale: aiScale }] }]}
                 >
-                  <Ionicons name="sparkles" size={18} color="#04101C" />
+                  <Ionicons name="sparkles" size={18} color={NAVY} />
                 </Animated.View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.aiThinkingTitle}>AI is crafting your itinerary…</Text>
@@ -1159,7 +1074,7 @@ export default function CircuitPlannerScreen({ navigation }) {
 
             {planError ? (
               <View style={s.errBox}>
-                <Ionicons name="alert-circle-outline" size={16} color="#FCA5A5" />
+                <Ionicons name="alert-circle-outline" size={16} color={COLORS.danger} />
                 <Text style={s.errT}>{planError}</Text>
               </View>
             ) : null}
@@ -1180,10 +1095,9 @@ export default function CircuitPlannerScreen({ navigation }) {
 
           {/* Selected destinations map */}
           <View style={[s.card, { marginTop: 12 }]}>
-            <CardAccent />
             <View style={s.mapHead}>
               <View style={s.mapIcon}>
-                <Ionicons name="map" size={17} color="#C4B5FD" />
+                <Ionicons name="map" size={17} color={NAVY} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.mapTitle}>Your Route Map</Text>
@@ -1194,7 +1108,7 @@ export default function CircuitPlannerScreen({ navigation }) {
                 </Text>
               </View>
               {mapLoading ? (
-                <ActivityIndicator size="small" color={AI.cyan} />
+                <ActivityIndicator size="small" color={COLORS.primaryText} />
               ) : mapStops.length ? (
                 <View style={s.mapCount}>
                   <Text style={s.mapCountT}>
@@ -1248,18 +1162,18 @@ export default function CircuitPlannerScreen({ navigation }) {
             ) : (
               <View style={s.mapPlaceholder}>
                 {mapLoading ? (
-                  <ActivityIndicator size="small" color={AI.cyan} />
+                  <ActivityIndicator size="small" color={COLORS.primaryText} />
                 ) : (
                   <Ionicons
                     name={mapError || mapRenderError ? 'cloud-offline-outline' : 'map-outline'}
                     size={22}
-                    color={mapError || mapRenderError ? '#FCA5A5' : AI.textDim}
+                    color={mapError || mapRenderError ? COLORS.danger : '#9AA5B8'}
                   />
                 )}
                 <Text
                   style={[
                     s.mapPlaceholderT,
-                    (mapError || mapRenderError) && { color: '#FCA5A5' },
+                    (mapError || mapRenderError) && { color: COLORS.danger },
                   ]}
                 >
                   {mapLoading
@@ -1301,7 +1215,6 @@ export default function CircuitPlannerScreen({ navigation }) {
                 planY.current = e.nativeEvent.layout.y;
               }}
             >
-              <CardAccent />
               <Text style={s.planTag}>YOUR AI ITINERARY</Text>
               <Text style={s.planTitle}>
                 {destinationLabel}
@@ -1334,7 +1247,7 @@ export default function CircuitPlannerScreen({ navigation }) {
                           <Ionicons
                             name="location-outline"
                             size={11}
-                            color={AI.cyan}
+                            color={COLORS.primaryText}
                           />
                           <Text style={s.itAttraction}>{p.attraction}</Text>
                         </View>
@@ -1407,7 +1320,7 @@ export default function CircuitPlannerScreen({ navigation }) {
             {STEPS.map((step, i) => (
               <View key={step.title} style={s.stepCard}>
                 <View style={s.stepIcon}>
-                  <Ionicons name={step.icon} size={19} color={AI.cyan} />
+                  <Ionicons name={step.icon} size={19} color={NAVY} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.stepTitle}>{step.title}</Text>
@@ -1428,7 +1341,7 @@ export default function CircuitPlannerScreen({ navigation }) {
             {WHY.map((w) => (
               <View key={w.title} style={s.whyCard}>
                 <View style={s.whyIcon}>
-                  <Ionicons name={w.icon} size={18} color={AI.violet} />
+                  <Ionicons name={w.icon} size={18} color={NAVY} />
                 </View>
                 <Text style={s.whyTitle}>{w.title}</Text>
                 <Text style={s.whyText}>{w.text}</Text>
@@ -1500,7 +1413,7 @@ export default function CircuitPlannerScreen({ navigation }) {
           {FAQS.map((f, i) => {
             const open = openFaq === i;
             return (
-              <View key={f.q} style={[s.faqCard, open && s.faqCardOpen]}>
+              <View key={f.q} style={[s.faqCard, open && { borderColor: '#F3DE63' }]}>
                 <TouchableOpacity
                   style={s.faqRow}
                   onPress={() => setOpenFaq(open ? -1 : i)}
@@ -1510,7 +1423,7 @@ export default function CircuitPlannerScreen({ navigation }) {
                   <Ionicons
                     name={open ? 'chevron-up' : 'chevron-down'}
                     size={16}
-                    color={AI.textMuted}
+                    color="#7E8AA0"
                   />
                 </TouchableOpacity>
                 {open ? <Text style={s.faqA}>{f.a}</Text> : null}
@@ -1520,26 +1433,13 @@ export default function CircuitPlannerScreen({ navigation }) {
 
           {/* Final CTA */}
           <LinearGradient
-            colors={['#0A1626', '#0B1D36', '#102B4C']}
+            colors={['#0A1626', '#0E2A47', '#12375D']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={s.ctaBanner}
           >
-            <Image
-              source={HERO_AI_IMAGE}
-              style={s.ctaImage}
-              resizeMode="cover"
-              pointerEvents="none"
-            />
-            <LinearGradient
-              pointerEvents="none"
-              colors={['rgba(4, 9, 18, 0.94)', 'rgba(4, 9, 18, 0.72)']}
-              start={{ x: 0.1, y: 0 }}
-              end={{ x: 0.9, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
-            />
             <View style={s.ctaSpark}>
-              <Ionicons name="sparkles" size={16} color={AI.cyan} />
+              <Ionicons name="sparkles" size={16} color={COLORS.primary} />
             </View>
             <Text style={s.ctaT}>Ready to Plan Your Perfect Trip?</Text>
             <Text style={s.ctaS}>Let AI do the planning — you just pack your bags.</Text>
@@ -1598,7 +1498,7 @@ export default function CircuitPlannerScreen({ navigation }) {
                     <Text style={s.dateRowT}>{fmtDate(d)}</Text>
                     <Text style={s.dateRowD}>{WEEKDAYS[d.getDay()]}</Text>
                     {selected ? (
-                      <Ionicons name="checkmark-circle" size={18} color={AI.cyan} />
+                      <Ionicons name="checkmark-circle" size={18} color={NAVY} />
                     ) : null}
                   </TouchableOpacity>
                 );
@@ -1612,234 +1512,153 @@ export default function CircuitPlannerScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  pageBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  pagePattern: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.52,
-  },
-  pageGlow: {
-    position: 'absolute',
-    width: 430,
-    height: 430,
-    opacity: 0.38,
-  },
-  pageGlowTop: { top: -180, right: -165 },
-  pageGlowMid: { top: 780, left: -220, opacity: 0.22 },
-
   offer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(7, 17, 31, 0.95)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(254, 228, 0, 0.18)',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
-  offerT: { fontSize: 9, fontWeight: '900', letterSpacing: 0.9, color: COLORS.primary, marginLeft: 5 },
-  offerDivider: {
-    width: 1,
-    height: 12,
-    backgroundColor: 'rgba(254, 228, 0, 0.22)',
-    marginHorizontal: 8,
-  },
-  offerS: { flex: 1, fontSize: 10.5, fontWeight: '700', color: '#C8D7EA', marginRight: 6 },
+  offerT: { fontSize: 9, fontWeight: '900', letterSpacing: 0.9, color: NAVY, marginLeft: 5 },
+  offerDivider: { width: 1, height: 12, backgroundColor: 'rgba(14,42,71,0.25)', marginHorizontal: 8 },
+  offerS: { flex: 1, fontSize: 10.5, fontWeight: '700', color: NAVY, marginRight: 6 },
 
-  hero: {
-    borderRadius: 24,
-    marginTop: 14,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.24)',
-    backgroundColor: '#071426',
-    minHeight: 330,
-    justifyContent: 'center',
-    shadowColor: '#22D3EE',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 22,
-    elevation: 6,
-  },
-  heroImage: { ...StyleSheet.absoluteFillObject },
-  heroContent: { padding: 17 },
+  hero: { borderRadius: 20, padding: 16, marginTop: 14, overflow: 'hidden' },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(92, 225, 255, 0.11)',
+    backgroundColor: 'rgba(254,228,0,0.14)',
     borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.38)',
+    borderColor: 'rgba(254,228,0,0.42)',
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  heroBadgeT: {
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    color: AI.cyan,
-    marginLeft: 4,
-  },
+  heroBadgeT: { fontSize: 8, fontWeight: '800', letterSpacing: 0.8, color: COLORS.primary, marginLeft: 4 },
   heroOrb: {
-    width: 27,
-    height: 27,
-    borderRadius: 14,
-    backgroundColor: 'rgba(92, 225, 255, 0.11)',
-    borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.28)',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(254,228,0,0.16)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroOrbViolet: {
-    backgroundColor: 'rgba(167, 139, 250, 0.13)',
-    borderColor: 'rgba(167, 139, 250, 0.32)',
-  },
+
   heroT: {
-    fontSize: 24,
-    lineHeight: 31,
+    fontSize: 23,
+    lineHeight: 29,
     fontWeight: '900',
     color: '#fff',
-    letterSpacing: -0.35,
+    letterSpacing: -0.3,
     marginTop: 14,
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 7,
   },
-  heroAi: {
-    color: AI.cyan,
-    textShadowColor: 'rgba(92, 225, 255, 0.85)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 11,
-  },
-  heroS: { fontSize: 11.5, lineHeight: 17.5, color: '#B8CADF', marginTop: 7 },
+  heroS: { fontSize: 11.5, lineHeight: 17, color: '#C7D2E0', marginTop: 7 },
   heroPoint: { flexDirection: 'row', alignItems: 'center', marginBottom: 7 },
   heroCheck: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: AI.cyan,
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
-    shadowColor: AI.cyan,
-    shadowOpacity: 0.5,
-    shadowRadius: 6,
-    elevation: 2,
   },
-  heroPointT: { fontSize: 11.5, color: '#DCEAF8', fontWeight: '600' },
+  heroPointT: { fontSize: 11.5, color: '#E6EDF7', fontWeight: '600' },
   heroBtns: { flexDirection: 'row', marginTop: 16, gap: 10 },
   heroBtn: {
     flex: 1,
-    height: 46,
-    borderRadius: 12,
+    height: 44,
+    borderRadius: 11,
     backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
   },
   heroBtnT: { fontSize: 12.5, fontWeight: '900', color: NAVY },
   heroBtnGhost: {
     flex: 1,
-    height: 46,
-    borderRadius: 12,
+    height: 44,
+    borderRadius: 11,
     borderWidth: 1.2,
-    borderColor: 'rgba(92, 225, 255, 0.34)',
-    backgroundColor: 'rgba(92, 225, 255, 0.06)',
+    borderColor: '#3B5779',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroBtnGhostT: { fontSize: 12.5, fontWeight: '800', color: '#B9F3FF' },
+  heroBtnGhostT: { fontSize: 12.5, fontWeight: '800', color: '#DCE5F2' },
 
   card: {
-    position: 'relative',
-    backgroundColor: 'rgba(10, 23, 42, 0.94)',
-    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: AI.border,
+    borderColor: '#EDF0F6',
     padding: 15,
     marginTop: 14,
-    shadowColor: '#2AC8FF',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 18,
-    elevation: 4,
-  },
-  cardAccent: {
-    position: 'absolute',
-    top: 0,
-    left: 24,
-    right: 24,
-    height: 1.5,
-    opacity: 0.9,
+    shadowColor: '#0E2A47',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 14,
+    elevation: 2,
   },
   genHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
   genIcon: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: AI.cyanSoft,
-    borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.26)',
+    backgroundColor: '#FFF4B8',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
   },
-  genTitle: { fontSize: 14.5, fontWeight: '900', color: AI.text },
-  genSub: { fontSize: 10.5, color: AI.textMuted, marginTop: 2 },
-  explore: { fontSize: 11, fontWeight: '800', color: AI.cyan },
+  genTitle: { fontSize: 14.5, fontWeight: '900', color: NAVY },
+  genSub: { fontSize: 10.5, color: '#8A94A6', marginTop: 2 },
+  explore: { fontSize: 11, fontWeight: '800', color: COLORS.primaryText },
 
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AI.surfaceSoft,
+    backgroundColor: INPUT_BG,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.14)',
+    borderColor: '#E6ECF7',
     paddingHorizontal: 13,
     height: 50,
   },
-  input: { flex: 1, fontSize: 13, color: AI.text, paddingVertical: 0 },
+  input: { flex: 1, fontSize: 13, color: NAVY, paddingVertical: 0 },
   twoCol: { flexDirection: 'row', gap: 10, marginTop: 10 },
   halfField: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AI.surfaceSoft,
+    backgroundColor: INPUT_BG,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.14)',
+    borderColor: '#E6ECF7',
     paddingHorizontal: 11,
     height: 50,
   },
-  halfT: { flex: 1, fontSize: 12, color: AI.text },
+  halfT: { flex: 1, fontSize: 12, color: NAVY },
 
   travelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AI.surfaceSoft,
+    backgroundColor: INPUT_BG,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.14)',
+    borderColor: '#E6ECF7',
     paddingHorizontal: 13,
     height: 50,
     marginTop: 10,
   },
-  travelLabel: { flex: 1, fontSize: 13, color: AI.text, marginLeft: 9 },
-  travelVal: { fontSize: 12.5, fontWeight: '700', color: AI.text, marginRight: 8 },
+  travelLabel: { flex: 1, fontSize: 13, color: NAVY, marginLeft: 9 },
+  travelVal: { fontSize: 12.5, fontWeight: '700', color: NAVY, marginRight: 8 },
   stepBtn: {
     width: 26,
     height: 26,
     borderRadius: 8,
-    backgroundColor: AI.surfaceSoft2,
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderColor: '#DCE3F0',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 6,
@@ -1848,15 +1667,15 @@ const s = StyleSheet.create({
   extraRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AI.surfaceSoft,
+    backgroundColor: INPUT_BG,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.14)',
+    borderColor: '#E6ECF7',
     paddingHorizontal: 13,
     height: 46,
     marginTop: 10,
   },
-  extraInput: { flex: 1, fontSize: 12.5, color: AI.text, paddingVertical: 0 },
+  extraInput: { flex: 1, fontSize: 12.5, color: NAVY, paddingVertical: 0 },
   addDest: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1865,28 +1684,25 @@ const s = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1.2,
     borderStyle: 'dashed',
-    borderColor: 'rgba(92, 225, 255, 0.3)',
-    backgroundColor: 'rgba(92, 225, 255, 0.045)',
+    borderColor: '#C9D2E3',
     marginTop: 10,
   },
-  addDestT: { fontSize: 11.5, fontWeight: '800', color: AI.cyan, marginLeft: 6 },
+  addDestT: { fontSize: 11.5, fontWeight: '800', color: NAVY, marginLeft: 6 },
 
   generateBtn: {
     height: 52,
     borderRadius: 13,
     backgroundColor: COLORS.primary,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
     overflow: 'hidden',
-    shadowColor: COLORS.primary,
+    shadowColor: '#E0C300',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.32,
-    shadowRadius: 14,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 4,
   },
   generateT: { fontSize: 14.5, fontWeight: '900', color: NAVY },
   aiShimmer: {
@@ -1895,15 +1711,15 @@ const s = StyleSheet.create({
     bottom: 0,
     width: 70,
     borderRadius: 35,
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
   },
   aiThinking: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(92, 225, 255, 0.08)',
+    backgroundColor: '#FFFDF0',
     borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.25)',
+    borderColor: '#F2E3A0',
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 9,
@@ -1913,22 +1729,18 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: AI.cyan,
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: AI.cyan,
-    shadowOpacity: 0.55,
-    shadowRadius: 10,
-    elevation: 3,
   },
-  aiThinkingTitle: { fontSize: 11.5, fontWeight: '900', color: AI.text },
-  aiThinkingSub: { fontSize: 9, lineHeight: 13, color: '#8FE8FF', marginTop: 2 },
+  aiThinkingTitle: { fontSize: 11.5, fontWeight: '900', color: NAVY },
+  aiThinkingSub: { fontSize: 9, lineHeight: 13, color: '#8A7B3E', marginTop: 2 },
   aiDots: { flexDirection: 'row', gap: 4, alignItems: 'center', marginLeft: 2 },
-  aiDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: AI.cyan },
+  aiDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: COLORS.primaryText },
   aiNote: {
     fontSize: 9.5,
     lineHeight: 14,
-    color: AI.textDim,
+    color: '#8A94A6',
     textAlign: 'center',
     marginTop: 9,
     paddingHorizontal: 8,
@@ -1937,14 +1749,14 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 7,
-    backgroundColor: AI.dangerSoft,
+    backgroundColor: '#FEF2F2',
     borderWidth: 1,
-    borderColor: AI.dangerBorder,
+    borderColor: '#FECACA',
     borderRadius: 10,
     padding: 10,
     marginTop: 9,
   },
-  errT: { flex: 1, fontSize: 10.5, lineHeight: 15, color: '#FCA5A5', fontWeight: '600' },
+  errT: { flex: 1, fontSize: 10.5, lineHeight: 15, color: COLORS.danger, fontWeight: '600' },
 
   trustRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   miniAvatar: {
@@ -1955,42 +1767,40 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: -6,
     borderWidth: 1.5,
-    borderColor: '#0A172A',
+    borderColor: '#fff',
   },
   miniAvatarT: { fontSize: 8.5, fontWeight: '900', color: NAVY },
-  trustT: { fontSize: 10, fontWeight: '600', color: AI.textMuted, marginLeft: 8 },
+  trustT: { fontSize: 10, fontWeight: '600', color: '#6B7280', marginLeft: 8 },
 
   mapHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   mapIcon: {
     width: 36,
     height: 36,
     borderRadius: 11,
-    backgroundColor: AI.violetSoft,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.28)',
+    backgroundColor: '#FFF4B8',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
   },
-  mapTitle: { fontSize: 14.5, fontWeight: '900', color: AI.text },
-  mapSub: { fontSize: 10.5, color: AI.textMuted, marginTop: 2 },
+  mapTitle: { fontSize: 14.5, fontWeight: '900', color: NAVY },
+  mapSub: { fontSize: 10.5, color: '#8A94A6', marginTop: 2 },
   mapCount: {
     minWidth: 38,
     height: 22,
     borderRadius: 11,
-    backgroundColor: AI.surfaceSoft2,
+    backgroundColor: '#F1F5FC',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
-  mapCountT: { fontSize: 9.5, fontWeight: '800', color: AI.textMuted },
+  mapCountT: { fontSize: 9.5, fontWeight: '800', color: '#6B7280' },
   stopChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
   stopChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: AI.surfaceSoft,
+    backgroundColor: '#F7F9FD',
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.15)',
+    borderColor: '#E6ECF7',
     borderRadius: 999,
     paddingLeft: 4,
     paddingRight: 9,
@@ -2000,27 +1810,27 @@ const s = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: AI.cyan,
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stopChipNumT: { fontSize: 9, fontWeight: '900', color: '#04101C' },
-  stopChipT: { fontSize: 10, fontWeight: '600', color: AI.text, marginLeft: 5, maxWidth: 160 },
+  stopChipNumT: { fontSize: 9, fontWeight: '900', color: NAVY },
+  stopChipT: { fontSize: 10, fontWeight: '600', color: NAVY, marginLeft: 5, maxWidth: 160 },
   mapWrap: {
     height: 210,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.2)',
+    borderColor: '#E6ECF7',
     overflow: 'hidden',
-    backgroundColor: '#081426',
+    backgroundColor: '#EAF2E8',
   },
   map: { flex: 1 },
   mapPlaceholder: {
     height: 150,
     borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: '#F7F9FD',
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.12)',
+    borderColor: '#EDF1F8',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
@@ -2029,27 +1839,27 @@ const s = StyleSheet.create({
   mapPlaceholderT: {
     fontSize: 11,
     lineHeight: 16,
-    color: AI.textMuted,
+    color: '#6B7280',
     textAlign: 'center',
     fontWeight: '600',
   },
-  mapNote: { fontSize: 9.5, lineHeight: 14, color: '#FCA5A5', marginTop: 7 },
+  mapNote: { fontSize: 9.5, lineHeight: 14, color: COLORS.danger, marginTop: 7 },
 
   destHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   destLoading: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: AI.surfaceSoft,
+    backgroundColor: '#F7F9FD',
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.12)',
+    borderColor: '#EDF1F8',
     borderRadius: 12,
     padding: 10,
     marginTop: 4,
   },
-  destLoadingTitle: { fontSize: 11, fontWeight: '800', color: AI.text },
-  destLoadingSub: { fontSize: 9.5, lineHeight: 14, color: AI.textMuted, marginTop: 2 },
-  destEmpty: { fontSize: 10.5, lineHeight: 16, color: AI.textMuted, paddingVertical: 8 },
+  destLoadingTitle: { fontSize: 11, fontWeight: '800', color: NAVY },
+  destLoadingSub: { fontSize: 9.5, lineHeight: 14, color: '#7B8799', marginTop: 2 },
+  destEmpty: { fontSize: 10.5, lineHeight: 16, color: '#6B7280', paddingVertical: 8 },
   retryBtn: {
     height: 28,
     borderRadius: 8,
@@ -2067,46 +1877,43 @@ const s = StyleSheet.create({
     marginBottom: 6,
     paddingHorizontal: 2,
   },
-  destCity: { fontSize: 11.5, fontWeight: '900', color: AI.text, letterSpacing: 0.3 },
-  destCityCount: { fontSize: 9, fontWeight: '700', color: AI.textMuted },
+  destCity: { fontSize: 11.5, fontWeight: '900', color: NAVY, letterSpacing: 0.3 },
+  destCityCount: { fontSize: 9, fontWeight: '700', color: '#8A94A6' },
   destItem: {
-    backgroundColor: 'rgba(255, 255, 255, 0.035)',
+    backgroundColor: '#FBFCFE',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.13)',
+    borderColor: '#E9EEF7',
     marginBottom: 7,
     overflow: 'hidden',
   },
-  destItemOpen: {
-    borderColor: 'rgba(92, 225, 255, 0.44)',
-    backgroundColor: 'rgba(92, 225, 255, 0.07)',
-  },
+  destItemOpen: { borderColor: '#F0D95A', backgroundColor: '#FFFDF4' },
   destRow: { flexDirection: 'row', alignItems: 'center', padding: 9, gap: 9 },
-  destThumb: { width: 56, height: 56, borderRadius: 10, backgroundColor: '#10243D' },
+  destThumb: { width: 56, height: 56, borderRadius: 10, backgroundColor: '#E8EDF5' },
   destThumbEmpty: { alignItems: 'center', justifyContent: 'center' },
   destNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  destName: { flexShrink: 1, fontSize: 12, fontWeight: '900', color: AI.text },
-  destSub: { fontSize: 9.5, color: AI.textMuted, marginTop: 2 },
-  destCount: { fontSize: 8.5, fontWeight: '700', color: AI.cyan, marginTop: 3 },
+  destName: { flexShrink: 1, fontSize: 12, fontWeight: '900', color: NAVY },
+  destSub: { fontSize: 9.5, color: '#7B8799', marginTop: 2 },
+  destCount: { fontSize: 8.5, fontWeight: '700', color: COLORS.primaryText, marginTop: 3 },
   destTrend: {
-    backgroundColor: 'rgba(248, 113, 113, 0.14)',
+    backgroundColor: '#FFE7E7',
     borderRadius: 999,
     paddingHorizontal: 5,
     paddingVertical: 1,
   },
-  destTrendT: { fontSize: 6.5, fontWeight: '900', letterSpacing: 0.4, color: '#FFB4B4' },
+  destTrendT: { fontSize: 6.5, fontWeight: '900', letterSpacing: 0.4, color: '#D14343' },
   destChevron: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: AI.surfaceSoft2,
+    backgroundColor: '#F1F4FA',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  destChevronOpen: { backgroundColor: AI.cyan },
+  destChevronOpen: { backgroundColor: COLORS.primary },
   destBody: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(92, 225, 255, 0.18)',
+    borderTopColor: '#F0E8C9',
     paddingHorizontal: 10,
     paddingTop: 10,
     paddingBottom: 10,
@@ -2115,99 +1922,90 @@ const s = StyleSheet.create({
     width: '100%',
     height: 132,
     borderRadius: 10,
-    backgroundColor: '#10243D',
+    backgroundColor: '#E8EDF5',
     marginBottom: 8,
   },
-  destDesc: { fontSize: 10.5, lineHeight: 16, color: '#B8C7D9' },
+  destDesc: { fontSize: 10.5, lineHeight: 16, color: '#4B5563' },
   destMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   destMetaChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(92, 225, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.14)',
+    backgroundColor: '#FFF7D1',
     borderRadius: 999,
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
-  destMetaChipT: { fontSize: 8.5, fontWeight: '800', color: '#9CEBFF' },
+  destMetaChipT: { fontSize: 8.5, fontWeight: '800', color: '#6B5A1A' },
   destGallery: { marginTop: 9 },
   destGalleryImg: {
     width: 96,
     height: 64,
     borderRadius: 8,
     marginRight: 6,
-    backgroundColor: '#10243D',
+    backgroundColor: '#E8EDF5',
   },
   destSection: { marginTop: 12 },
   destSectionTitle: {
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 0.7,
-    color: AI.text,
+    color: NAVY,
     textTransform: 'uppercase',
     marginBottom: 6,
   },
   attrRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 8 },
-  attrThumb: { width: 42, height: 42, borderRadius: 8, backgroundColor: '#10243D' },
+  attrThumb: { width: 42, height: 42, borderRadius: 8, backgroundColor: '#E8EDF5' },
   attrThumbEmpty: { alignItems: 'center', justifyContent: 'center' },
-  attrName: { fontSize: 10.5, fontWeight: '800', color: AI.text },
-  attrMeta: { fontSize: 8.5, color: AI.textMuted, marginTop: 1 },
-  attrDesc: { fontSize: 9.5, lineHeight: 14, color: '#A9B9CC', marginTop: 2 },
+  attrName: { fontSize: 10.5, fontWeight: '800', color: NAVY },
+  attrMeta: { fontSize: 8.5, color: '#8A94A6', marginTop: 1 },
+  attrDesc: { fontSize: 9.5, lineHeight: 14, color: '#5B6676', marginTop: 2 },
   reachRow: {
-    backgroundColor: AI.surfaceSoft,
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.12)',
+    borderColor: '#EEF1F7',
     borderRadius: 10,
     padding: 9,
     marginBottom: 6,
   },
-  reachTitle: { fontSize: 10, fontWeight: '900', color: AI.text },
-  reachDesc: { fontSize: 9.5, lineHeight: 14, color: '#A9B9CC', marginTop: 3 },
-  reachHighlight: { fontSize: 9, lineHeight: 13.5, color: '#A7D8FF', marginTop: 3 },
+  reachTitle: { fontSize: 10, fontWeight: '900', color: NAVY },
+  reachDesc: { fontSize: 9.5, lineHeight: 14, color: '#5B6676', marginTop: 3 },
+  reachHighlight: { fontSize: 9, lineHeight: 13.5, color: '#7B6A2A', marginTop: 3 },
 
-  planTag: { fontSize: 8.5, fontWeight: '900', letterSpacing: 1, color: AI.cyan },
-  planTitle: { fontSize: 16, fontWeight: '900', color: AI.text, marginTop: 5 },
-  planMeta: { fontSize: 11, color: AI.textMuted, marginTop: 3 },
+  planTag: { fontSize: 8.5, fontWeight: '900', letterSpacing: 1, color: COLORS.primaryText },
+  planTitle: { fontSize: 16, fontWeight: '900', color: NAVY, marginTop: 5 },
+  planMeta: { fontSize: 11, color: '#6B7280', marginTop: 3 },
   itRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: AI.surfaceSoft,
+    backgroundColor: '#F7F9FD',
     borderRadius: 12,
     padding: 10,
     marginBottom: 7,
     borderWidth: 1,
-    borderColor: 'rgba(120, 180, 255, 0.12)',
+    borderColor: '#EDF1F8',
   },
   itBadge: {
     width: 28,
     height: 28,
     borderRadius: 9,
-    backgroundColor: AI.cyanSoft,
-    borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.2)',
+    backgroundColor: '#FFF4B8',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
     marginTop: 1,
   },
-  itBadgeT: { fontSize: 11, fontWeight: '900', color: AI.cyan },
+  itBadgeT: { fontSize: 11, fontWeight: '900', color: NAVY },
   itTop: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  itD: { fontSize: 11, fontWeight: '800', color: AI.cyan },
-  itCity: { flex: 1, fontSize: 9.5, color: AI.textMuted, textAlign: 'right' },
-  itTitle: { fontSize: 12.5, fontWeight: '900', color: AI.text, marginTop: 3 },
+  itD: { fontSize: 11, fontWeight: '800', color: COLORS.primaryText },
+  itCity: { flex: 1, fontSize: 9.5, color: '#8A94A6', textAlign: 'right' },
+  itTitle: { fontSize: 12.5, fontWeight: '900', color: NAVY, marginTop: 3 },
   itAttractionRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  itAttraction: { flex: 1, fontSize: 10.5, lineHeight: 15, color: AI.cyan, fontWeight: '600' },
-  itSummary: { fontSize: 10.5, lineHeight: 15.5, color: '#B6C6D9', marginTop: 5 },
-  itDetails: {
-    marginTop: 6,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    paddingTop: 6,
-  },
-  itDetail: { fontSize: 10, lineHeight: 15, color: '#AEBFD2', marginBottom: 3 },
-  itDetailLabel: { fontWeight: '800', color: AI.text },
+  itAttraction: { flex: 1, fontSize: 10.5, lineHeight: 15, color: COLORS.primaryText, fontWeight: '600' },
+  itSummary: { fontSize: 10.5, lineHeight: 15.5, color: '#4B5563', marginTop: 5 },
+  itDetails: { marginTop: 6, borderTopWidth: 1, borderTopColor: '#E8EDF6', paddingTop: 6 },
+  itDetail: { fontSize: 10, lineHeight: 15, color: '#5B667A', marginBottom: 3 },
+  itDetailLabel: { fontWeight: '800', color: NAVY },
   bookBtn: {
     height: 46,
     borderRadius: 12,
@@ -2221,31 +2019,23 @@ const s = StyleSheet.create({
 
   secHead: { alignItems: 'center', marginTop: 28, marginBottom: 12 },
   kicker: {
-    backgroundColor: 'rgba(92, 225, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.28)',
+    backgroundColor: COLORS.primary,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginBottom: 9,
   },
-  kickerT: { fontSize: 8, fontWeight: '900', letterSpacing: 1, color: AI.cyan },
-  secTitle: {
-    fontSize: 17.5,
-    fontWeight: '900',
-    color: AI.text,
-    textAlign: 'center',
-    letterSpacing: -0.2,
-  },
-  secSub: { fontSize: 11, lineHeight: 16, color: AI.textMuted, textAlign: 'center', marginTop: 5 },
+  kickerT: { fontSize: 8, fontWeight: '900', letterSpacing: 1, color: NAVY },
+  secTitle: { fontSize: 17.5, fontWeight: '900', color: NAVY, textAlign: 'center', letterSpacing: -0.2 },
+  secSub: { fontSize: 11, lineHeight: 16, color: '#6B7280', textAlign: 'center', marginTop: 5 },
 
   stepCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(10, 23, 42, 0.9)',
+    backgroundColor: '#fff',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: AI.border,
+    borderColor: '#EDF0F6',
     padding: 13,
     marginBottom: 10,
   },
@@ -2253,67 +2043,56 @@ const s = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 13,
-    backgroundColor: AI.cyanSoft,
-    borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.2)',
+    backgroundColor: '#FFF4B8',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 11,
   },
-  stepTitle: { fontSize: 12.5, fontWeight: '900', color: AI.text, paddingRight: 24 },
-  stepText: { fontSize: 10.5, lineHeight: 15.5, color: AI.textMuted, marginTop: 3 },
-  stepNum: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    fontSize: 10,
-    fontWeight: '900',
-    color: 'rgba(255, 255, 255, 0.14)',
-  },
+  stepTitle: { fontSize: 12.5, fontWeight: '900', color: NAVY, paddingRight: 24 },
+  stepText: { fontSize: 10.5, lineHeight: 15.5, color: '#6B7280', marginTop: 3 },
+  stepNum: { position: 'absolute', top: 12, right: 12, fontSize: 10, fontWeight: '900', color: '#D8DEEA' },
 
   whyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   whyCard: {
     flexGrow: 1,
     flexBasis: '47%',
-    backgroundColor: 'rgba(10, 23, 42, 0.9)',
+    backgroundColor: '#fff',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: AI.border,
+    borderColor: '#EDF0F6',
     padding: 13,
   },
   whyIcon: {
     width: 36,
     height: 36,
     borderRadius: 11,
-    backgroundColor: AI.violetSoft,
-    borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.22)',
+    backgroundColor: '#FFF4B8',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 9,
   },
-  whyTitle: { fontSize: 11.5, fontWeight: '900', color: AI.text },
-  whyText: { fontSize: 10, lineHeight: 14.5, color: AI.textMuted, marginTop: 3 },
+  whyTitle: { fontSize: 11.5, fontWeight: '900', color: NAVY },
+  whyText: { fontSize: 10, lineHeight: 14.5, color: '#6B7280', marginTop: 3 },
 
   logoRow: { flexDirection: 'row', gap: 8 },
   logoBox: {
     flex: 1,
     height: 40,
     borderRadius: 11,
-    backgroundColor: 'rgba(10, 23, 42, 0.9)',
+    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: AI.border,
+    borderColor: '#EDF0F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoT: { fontSize: 10.5, fontWeight: '900', color: '#B8C7D9' },
+  logoT: { fontSize: 10.5, fontWeight: '900', color: '#4B5563' },
 
   reviewCard: {
     width: 302,
-    backgroundColor: 'rgba(10, 23, 42, 0.92)',
+    backgroundColor: '#fff',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: AI.border,
+    borderColor: '#EDF0F6',
     padding: 14,
     marginRight: 10,
   },
@@ -2327,64 +2106,44 @@ const s = StyleSheet.create({
     marginRight: 10,
   },
   reviewAvatarT: { fontSize: 12, fontWeight: '900', color: NAVY },
-  reviewName: { fontSize: 12.5, fontWeight: '900', color: AI.text },
-  reviewCity: { fontSize: 10, color: AI.textMuted, marginTop: 1 },
+  reviewName: { fontSize: 12.5, fontWeight: '900', color: NAVY },
+  reviewCity: { fontSize: 10, color: '#8A94A6', marginTop: 1 },
   stars: { flexDirection: 'row' },
-  reviewText: { fontSize: 11.5, lineHeight: 18, color: '#B6C6D9', marginTop: 10 },
+  reviewText: { fontSize: 11.5, lineHeight: 18, color: '#4B5563', marginTop: 10 },
 
   stats: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(10, 23, 42, 0.9)',
+    backgroundColor: '#fff',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: AI.border,
+    borderColor: '#EDF0F6',
     paddingVertical: 13,
     marginTop: 12,
   },
   statCol: { flex: 1, alignItems: 'center' },
-  statDivider: { borderLeftWidth: 1, borderLeftColor: 'rgba(120, 180, 255, 0.14)' },
-  statV: { fontSize: 15, fontWeight: '900', color: AI.text },
-  statL: { fontSize: 9, color: AI.textMuted, marginTop: 3 },
+  statDivider: { borderLeftWidth: 1, borderLeftColor: '#EDF0F6' },
+  statV: { fontSize: 15, fontWeight: '900', color: NAVY },
+  statL: { fontSize: 9, color: '#8A94A6', marginTop: 3 },
 
   faqCard: {
-    backgroundColor: 'rgba(10, 23, 42, 0.9)',
+    backgroundColor: '#fff',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: AI.border,
+    borderColor: '#EDF0F6',
     paddingHorizontal: 13,
     paddingVertical: 2,
     marginBottom: 8,
   },
-  faqCardOpen: {
-    borderColor: 'rgba(92, 225, 255, 0.44)',
-    backgroundColor: 'rgba(92, 225, 255, 0.055)',
-  },
   faqRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13 },
-  faqQ: { flex: 1, fontSize: 12, fontWeight: '800', color: AI.text, paddingRight: 10 },
-  faqA: { fontSize: 11, lineHeight: 17, color: AI.textMuted, paddingBottom: 13, paddingRight: 12 },
+  faqQ: { flex: 1, fontSize: 12, fontWeight: '800', color: NAVY, paddingRight: 10 },
+  faqA: { fontSize: 11, lineHeight: 17, color: '#6B7280', paddingBottom: 13, paddingRight: 12 },
 
-  ctaBanner: {
-    borderRadius: 24,
-    padding: 20,
-    marginTop: 26,
-    alignItems: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.22)',
-    shadowColor: '#22D3EE',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 18,
-    elevation: 4,
-  },
-  ctaImage: { ...StyleSheet.absoluteFillObject, opacity: 0.86 },
+  ctaBanner: { borderRadius: 20, padding: 20, marginTop: 26, alignItems: 'center', overflow: 'hidden' },
   ctaSpark: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(92, 225, 255, 0.11)',
-    borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.3)',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(254,228,0,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
@@ -2404,20 +2163,14 @@ const s = StyleSheet.create({
   ctaBtnT: { fontSize: 12.5, fontWeight: '900', color: NAVY },
 
   footer: { alignItems: 'center', marginTop: 24 },
-  footerT: { fontSize: 10, color: '#7F94AE', fontWeight: '600' },
+  footerT: { fontSize: 10, color: '#8A94A6', fontWeight: '600' },
   footerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  footerLink: { fontSize: 10, color: '#9FB4CE' },
-  footerDot: { fontSize: 10, color: '#5E748E', marginHorizontal: 7 },
+  footerLink: { fontSize: 10, color: '#6B7280' },
+  footerDot: { fontSize: 10, color: '#9CA3AF', marginHorizontal: 7 },
 
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(2, 6, 13, 0.8)',
-    justifyContent: 'flex-end',
-  },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(14,42,71,0.38)', justifyContent: 'flex-end' },
   dateSheet: {
-    backgroundColor: '#081426',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(92, 225, 255, 0.18)',
+    backgroundColor: '#fff',
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     paddingHorizontal: 18,
@@ -2428,18 +2181,18 @@ const s = StyleSheet.create({
     width: 38,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(92, 225, 255, 0.35)',
+    backgroundColor: '#E3E8F1',
     alignSelf: 'center',
     marginBottom: 12,
   },
-  sheetTitle: { fontSize: 14, fontWeight: '900', color: AI.text, marginBottom: 6 },
+  sheetTitle: { fontSize: 14, fontWeight: '900', color: NAVY, marginBottom: 6 },
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.07)',
+    borderBottomColor: '#F1F4F9',
   },
-  dateRowT: { flex: 1, fontSize: 13, color: AI.text, fontWeight: '600' },
-  dateRowD: { fontSize: 11.5, color: AI.textMuted, marginRight: 10 },
+  dateRowT: { flex: 1, fontSize: 13, color: NAVY, fontWeight: '600' },
+  dateRowD: { fontSize: 11.5, color: '#8A94A6', marginRight: 10 },
 });

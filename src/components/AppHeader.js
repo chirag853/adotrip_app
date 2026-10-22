@@ -16,38 +16,36 @@ export default function AppHeader({
   showSupport = true,
   showAccount = true,
   onMenu,
-  aiTheme = false,
 }) {
   const navigation = useNavigation();
   const backVisible = showBack ?? !!onBack;
   const handleBack = onBack || (() => navigation.goBack());
-  const iconColor = aiTheme ? '#DCEBFF' : COLORS.secondary;
 
   return (
-    <View style={[s.header, aiTheme && s.headerAi]}>
+    <View style={s.header}>
       <View style={s.topRow}>
         {backVisible ? (
           <TouchableOpacity
-            style={[s.iconBtn, aiTheme && s.iconBtnAi]}
+            style={s.iconBtn}
             onPress={handleBack}
             hitSlop={8}
             accessibilityLabel="Go back"
           >
-            <Ionicons name="chevron-back" size={20} color={iconColor} />
+            <Ionicons name="chevron-back" size={20} color={COLORS.secondary} />
           </TouchableOpacity>
         ) : null}
 
         <View style={s.logoWrap}>
-          <AdoLogo width={104} light={aiTheme} />
+          <AdoLogo width={104} />
         </View>
 
         {title ? (
           <View style={s.titleWrap}>
-            <Text style={[s.title, aiTheme && s.titleAi]} numberOfLines={1}>
+            <Text style={s.title} numberOfLines={1}>
               {title}
             </Text>
             {subtitle ? (
-              <Text style={[s.subtitle, aiTheme && s.subtitleAi]} numberOfLines={1}>
+              <Text style={s.subtitle} numberOfLines={1}>
                 {subtitle}
               </Text>
             ) : null}
@@ -60,34 +58,34 @@ export default function AppHeader({
 
         {showSupport ? (
           <TouchableOpacity
-            style={[s.iconBtn, { marginLeft: 8 }, aiTheme && s.iconBtnAi]}
+            style={[s.iconBtn, { marginLeft: 8 }]}
             onPress={() => navigation.navigate('Support')}
             hitSlop={8}
             accessibilityLabel="Support"
           >
-            <Ionicons name="headset-outline" size={19} color={iconColor} />
+            <Ionicons name="headset-outline" size={19} color={COLORS.secondary} />
           </TouchableOpacity>
         ) : null}
 
         {showAccount ? (
           <TouchableOpacity
-            style={[s.iconBtn, { marginLeft: 8 }, aiTheme && s.iconBtnAi]}
+            style={[s.iconBtn, { marginLeft: 8 }]}
             onPress={() => navigation.navigate('Auth')}
             hitSlop={8}
             accessibilityLabel="Account"
           >
-            <Ionicons name="person-outline" size={19} color={iconColor} />
+            <Ionicons name="person-outline" size={19} color={COLORS.secondary} />
           </TouchableOpacity>
         ) : null}
 
         {showMenu ? (
           <TouchableOpacity
-            style={[s.iconBtn, { marginLeft: 8 }, aiTheme && s.iconBtnAi]}
+            style={[s.iconBtn, { marginLeft: 8 }]}
             onPress={onMenu}
             hitSlop={8}
             accessibilityLabel="Open navigation menu"
           >
-            <Ionicons name="menu-outline" size={21} color={iconColor} />
+            <Ionicons name="menu-outline" size={21} color={COLORS.secondary} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -100,10 +98,6 @@ const s = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F0F2F7',
-  },
-  headerAi: {
-    backgroundColor: 'rgba(5, 12, 23, 0.97)',
-    borderBottomColor: 'rgba(92, 225, 255, 0.16)',
   },
   topRow: {
     flexDirection: 'row',
@@ -120,11 +114,6 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#F4F6FB',
   },
-  iconBtnAi: {
-    backgroundColor: 'rgba(92, 225, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(92, 225, 255, 0.15)',
-  },
   right: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   titleWrap: {
     flex: 1,
@@ -137,11 +126,9 @@ const s = StyleSheet.create({
     color: COLORS.secondary,
     letterSpacing: -0.2,
   },
-  titleAi: { color: '#EEF6FF' },
   subtitle: {
     fontSize: 10,
     color: COLORS.textLight,
     marginTop: 1,
   },
-  subtitleAi: { color: '#9FB4CE' },
 });
