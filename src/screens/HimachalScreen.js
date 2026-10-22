@@ -305,10 +305,11 @@ export default function HimachalScreen({ navigation }) {
   };
 
   const openBooking = (hotel) => {
-    setBooking(hotel);
-    setCheckIn(null);
-    setCheckOut(null);
-    setGuests(2);
+    if (!hotel?.slug) return;
+    navigation.navigate('HptdcBooking', {
+      slug: hotel.slug,
+      hotel,
+    });
   };
 
   const openHotelDetail = (hotel) => {

@@ -27,6 +27,7 @@ import ConfirmScreen from '../screens/ConfirmScreen';
 import AuthScreen from '../screens/AuthScreen';
 import HimachalScreen from '../screens/HimachalScreen';
 import HptdcHotelDetailScreen from '../screens/HptdcHotelDetailScreen';
+import HptdcBookingScreen from '../screens/HptdcBookingScreen';
 import { AboutScreen, ContactScreen, SupportScreen } from '../screens/InfoScreens';
 import ComingSoonScreen from '../screens/ComingSoonScreen';
 
@@ -80,6 +81,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Support" component={SupportScreen} />
       <Stack.Screen name="Himachal" component={HimachalScreen} />
       <Stack.Screen name="HptdcHotelDetail" component={HptdcHotelDetailScreen} />
+      <Stack.Screen name="HptdcBooking" component={HptdcBookingScreen} />
       <Stack.Screen
         name="LuxuryTrains"
         component={ComingSoonScreen}

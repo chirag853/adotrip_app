@@ -22,10 +22,19 @@ function formatExpiry(v) {
 }
 
 export default function CheckoutScreen({ navigation, route }) {
-  const { type = 'Flight', title = 'Booking', price = 4999, meta = '' } = route.params || {};
-  const [name, setName] = useState('Chirag');
-  const [phone, setPhone] = useState('98765 43210');
-  const [code, setCode] = useState('HOLIDAY50');
+  const {
+    type = 'Flight',
+    title = 'Booking',
+    price = 4999,
+    meta = '',
+    discount: discountParam,
+    promoCode,
+    guestName,
+    guestPhone,
+  } = route.params || {};
+  const [name, setName] = useState(guestName || 'Chirag');
+  const [phone, setPhone] = useState(guestPhone || '98765 43210');
+  const [code, setCode] = useState(promoCode === undefined ? 'HOLIDAY50' : promoCode);
   const [pay, setPay] = useState('UPI');
   // Method-wise details
   const [upiId, setUpiId] = useState('');
@@ -36,7 +45,7 @@ export default function CheckoutScreen({ navigation, route }) {
   const [bank, setBank] = useState('HDFC');
   const [err, setErr] = useState('');
 
-  const discount = 500;
+  const discount = discountParam === undefined ? 500 : Math.max(0, Number(discountParam) || 0);
   const total = Math.max(0, price - discount);
 
   const switchMethod = (m) => {
@@ -92,7 +101,12 @@ export default function CheckoutScreen({ navigation, route }) {
           <Text style={s.t}>{title}</Text>
           <Text style={s.m}>{meta}</Text>
           <View style={s.row}><Text style={s.k}>Base Fare</Text><Text style={s.v}>₹{price.toLocaleString('en-IN')}</Text></View>
-          <View style={s.row}><Text style={s.k}>Promo ({code})</Text><Text style={[s.v, { color: COLORS.success }]}>- ₹{discount}</Text></View>
+          {code || discount > 0 ? (
+            <View style={s.row}>
+              <Text style={s.k}>Promo {code ? `(${code})` : ''}</Text>
+              <Text style={[s.v, { color: COLORS.success }]}>- ₹{discount.toLocaleString('en-IN')}</Text>
+            </View>
+          ) : null}
           <View style={s.row}><Text style={s.k}>Taxes & Fees</Text><Text style={s.v}>Included</Text></View>
           <View style={[s.row, s.total]}><Text style={s.kB}>Total Payable</Text><Text style={s.vB}>₹{total.toLocaleString('en-IN')}</Text></View>
         </View>
@@ -100,7 +114,9 @@ export default function CheckoutScreen({ navigation, route }) {
           <Text style={s.sec}>Traveller Details</Text>
           <Field label="Full Name" value={name} onChangeText={(v) => { setName(v); setErr(''); }} icon="person-outline" />
           <Field label="Mobile Number" value={phone} onChangeText={(v) => { setPhone(v); setErr(''); }} keyboardType="phone-pad" icon="call-outline" />
-          <Field label="Promo Code" value={code} onChangeText={setCode} icon="pricetag-outline" />
+          {code ? (
+            <Field label="Promo Code" value={code} onChangeText={setCode} icon="pricetag-outline" />
+          ) : null}
         </View>
         <View style={s.card}>
           <Text style={s.sec}>Payment Method</Text>

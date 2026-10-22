@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Keyboard, StyleSheet } from 'react-native';
+import { useNavigationState } from '@react-navigation/native';
 import { COLORS } from '../theme';
 import AppFooter from './AppFooter';
 import { TAB_BAR_HEIGHT, TAB_BAR_BOTTOM } from '../navigation/tabBarConfig';
@@ -10,6 +11,8 @@ import { TAB_BAR_HEIGHT, TAB_BAR_BOTTOM } from '../navigation/tabBarConfig';
 // Keyboard khulte waqt footer hide hota hai, taaki inputs ke upar na aaye.
 export default function AppShell({ children, navigation }) {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const currentRoute = useNavigationState((state) => state?.routes?.[state.index]?.name);
+  const hideFooter = currentRoute === 'HptdcBooking';
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardOpen(true));
@@ -23,7 +26,7 @@ export default function AppShell({ children, navigation }) {
   return (
     <View style={s.root}>
       <View style={s.content}>{children}</View>
-      {!keyboardOpen ? (
+      {!keyboardOpen && !hideFooter ? (
         <>
           <View style={{ height: TAB_BAR_HEIGHT + TAB_BAR_BOTTOM }} />
           <AppFooter navigation={navigation} />

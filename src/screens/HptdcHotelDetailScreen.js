@@ -350,15 +350,13 @@ export default function HptdcHotelDetailScreen({ navigation, route }) {
     openLink(`https://www.google.com/maps/search/?api=1&query=${query}`);
   };
 
-  const requestBooking = (room) => {
+  const openBooking = (room) => {
     if (!d) return;
-    const roomLine = room
-      ? `\n${room.name} · ${room.price ? `${inr(room.price)}/night` : 'Tariff on request'}`
-      : '';
-    Alert.alert(
-      'Booking request',
-      `${d.name}${roomLine}\n\nHPTDC team will contact you shortly. No payment now.`
-    );
+    navigation.navigate('HptdcBooking', {
+      slug: d.slug,
+      hotel: d,
+      room: room || (d.rooms && d.rooms[0]) || null,
+    });
   };
 
   const openSimilar = (hotel) => {
@@ -516,7 +514,7 @@ export default function HptdcHotelDetailScreen({ navigation, route }) {
               subtitle={`${rooms.length} room types · Government rates`}
             >
               {rooms.map((room) => (
-                <RoomCard key={room.id} room={room} onBook={requestBooking} />
+                <RoomCard key={room.id} room={room} onBook={openBooking} />
               ))}
             </Section>
           ) : null}
@@ -651,7 +649,7 @@ export default function HptdcHotelDetailScreen({ navigation, route }) {
         <TouchableOpacity
           style={s.bookNow}
           activeOpacity={0.88}
-          onPress={() => requestBooking(null)}
+          onPress={() => openBooking(null)}
         >
           <Text style={s.bookNowText}>BOOK NOW</Text>
         </TouchableOpacity>
